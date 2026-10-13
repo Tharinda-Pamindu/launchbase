@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ConflictException, ResourceNotFoundException
@@ -23,19 +23,36 @@ class UserService:
     async def list_users(
         self,
         *,
+        q: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[Sequence[User], int]:
-        """Return a page of users, newest first.
+        """Return a page of users, newest first, optionally matching `q`
+        against name or email.
 
         Returns the page of users together with the total matching count so
         callers can render pagination controls without a second query
         round-trip on the caller side.
         """
-        total = await self.session.scalar(select(func.count()).select_from(User))
+        conditions = []
+        if q:
+            pattern = f"%{q}%"
+            conditions.append(
+                or_(
+                    User.email.ilike(pattern),
+                    func.concat(User.first_name, " ", User.last_name).ilike(pattern),
+                )
+            )
+        total = await self.session.scalar(
+            select(func.count()).select_from(User).where(*conditions)
+        )
 
         result = await self.session.execute(
-            select(User).order_by(User.created_at.desc()).limit(limit).offset(offset)
+            select(User)
+            .where(*conditions)
+            .order_by(User.created_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
         return result.scalars().all(), total or 0
 
@@ -102,12 +119,6 @@ class UserService:
         user.password = hash_password(password)
         await self.session.flush()
         return user
-
-    async def delete_user(self, user_id: uuid.UUID) -> None:
-        """Hard-delete a user (row removed)."""
-        user = await self.get_user(user_id)
-        await self.session.delete(user)
-        await self.session.flush()
 
     async def _ensure_email_available(
         self, email: str, *, exclude_id: uuid.UUID | None = None

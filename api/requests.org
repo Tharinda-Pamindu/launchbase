@@ -15,9 +15,24 @@ GET /health
 POST /auth
 Content-Type: application/json
 # Returns: 200 OK with access token
+# Returns: 401 for wrong credentials or a deactivated account
 
 {
   "email": "user@example.com",
+  "password": "11111111"
+}
+
+** Sign up
+POST /signup
+Content-Type: application/json
+# Returns: 201 Created with access token; sets the access_token cookie
+# Returns: 409 Conflict when the email is already registered
+# Note: always creates an active customer account, never platform staff
+
+{
+  "first_name": "Ada",
+  "last_name": "Lovelace",
+  "email": "ada@example.com",
   "password": "11111111"
 }
 
@@ -29,6 +44,225 @@ POST /logout
 GET /users/self
 # Returns: 200 OK with user details
 # Requires: Authentication
+
+** AI status
+GET /ai/status
+# Returns: 200 OK with {"available": bool}; false when no GOOGLE_API_KEY is set
+# Requires: Authentication
+
+** Organizations
+# Every /organizations/{id}/... route resolves the caller's membership:
+# not a member -> 404, suspended org -> 403 ORGANIZATION_SUSPENDED.
+
+*** List my organizations
+GET /organizations
+# Returns: 200 OK with [{id, name, created_at, role, is_suspended}]
+
+*** Create organization
+POST /organizations
+Content-Type: application/json
+# Returns: 201 Created; the caller becomes its owner
+
+{
+  "name": "Northwind Labs"
+}
+
+*** Get organization
+GET /organizations/{{(verb-var org-id)}}
+
+*** Rename organization
+PATCH /organizations/{{(verb-var org-id)}}
+Content-Type: application/json
+# Requires: owner or org admin (403 ORG_ADMIN_REQUIRED)
+
+{
+  "name": "Northwind"
+}
+
+*** Leave organization
+DELETE /organizations/{{(verb-var org-id)}}/membership
+# Returns: 204; 409 for the last owner
+
+*** List members
+GET /organizations/{{(verb-var org-id)}}/members
+
+*** Change a member's role
+PATCH /organizations/{{(verb-var org-id)}}/members/{{(verb-var membership-id)}}
+Content-Type: application/json
+# Owners set any role; org admins only admin/member; the last owner can't be demoted (409)
+
+{
+  "role": "admin"
+}
+
+*** Remove a member
+DELETE /organizations/{{(verb-var org-id)}}/members/{{(verb-var membership-id)}}
+# Returns: 204. Org admins remove members only; team memberships go too
+
+** Invites
+*** List pending invites
+GET /organizations/{{(verb-var org-id)}}/invites
+# Requires: owner or org admin
+
+*** Create invite link
+POST /organizations/{{(verb-var org-id)}}/invites
+Content-Type: application/json
+# Returns: 201 with token and invite_url (shown once; only a hash is stored)
+# Returns: 409 if the email is already a member
+
+{
+  "email": "new.hire@example.com",
+  "role": "member"
+}
+
+*** Revoke invite
+DELETE /organizations/{{(verb-var org-id)}}/invites/{{(verb-var invite-id)}}
+
+*** Preview invite (public)
+GET /invites/{{(verb-var invite-token)}}
+# Returns: 200 with organization_name, email, role, status (pending|accepted|revoked|expired)
+
+*** Accept invite
+POST /invites/{{(verb-var invite-token)}}/accept
+# Requires: logged in as the invited email (403 INVITE_EMAIL_MISMATCH otherwise)
+# Returns: 410 if used, revoked or expired; 409 if already a member
+
+** Teams
+*** List teams
+GET /organizations/{{(verb-var org-id)}}/teams
+
+*** Create team
+POST /organizations/{{(verb-var org-id)}}/teams
+Content-Type: application/json
+# Requires: owner or org admin; 409 on a duplicate name
+# GET, PATCH and DELETE .../teams/{team-id} read, rename and delete one team
+
+{
+  "name": "Payments",
+  "description": "Billing and checkout"
+}
+
+*** Add member or set lead
+PUT /organizations/{{(verb-var org-id)}}/teams/{{(verb-var team-id)}}/members/{{(verb-var user-id)}}
+Content-Type: application/json
+# Requires: owner or org admin. One lead per team: a new lead replaces the old one
+# Returns: 404 if the user isn't in this organization
+
+{
+  "is_lead": true
+}
+
+*** Remove from team
+DELETE /organizations/{{(verb-var org-id)}}/teams/{{(verb-var team-id)}}/members/{{(verb-var user-id)}}
+
+*** Team week
+GET /organizations/{{(verb-var org-id)}}/teams/{{(verb-var team-id)}}/weeks/2026-10-12
+# Requires: this team's lead, or owner/org admin (403 TEAM_LEAD_REQUIRED)
+# Per member: status (not_started|draft|submitted|approved|done), tasks done/total, shipped.
+# Someone else's draft shows its status only.
+
+*** Team history
+GET /organizations/{{(verb-var org-id)}}/teams/{{(verb-var team-id)}}/weeks?limit=12&offset=0
+# Returns: {items: [{week_start, member_count, submitted, approved, closed, shipped}], total, limit, offset}
+
+** Plans
+*** My plans
+GET /organizations/{{(verb-var org-id)}}/plans?limit=20&offset=0
+# Query: week_start (optional Monday) filters to one week
+
+*** Create plan
+POST /organizations/{{(verb-var org-id)}}/plans
+Content-Type: application/json
+# week_start must be a Monday: last week, this week or next week. 409 if one exists.
+
+{
+  "week_start": "2026-10-12",
+  "tasks": [
+    {"kind": "main", "title": "Checkout handles expired cards, confirmed on staging", "why": "Top support ticket", "estimate_hours": 16},
+    {"kind": "sub_goal", "title": "Card errors show a retry message, merged"},
+    {"kind": "gtm", "title": "Changelog entry published"}
+  ]
+}
+
+*** Get plan
+GET /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}
+# 404 unless you are the author, or a possible approver of a submitted plan.
+# permissions says which actions the caller may take now.
+
+*** Replace a draft's tasks
+PUT /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}
+Content-Type: application/json
+# Author, draft only. Send a task's id to keep it; omitted tasks are deleted.
+
+{
+  "tasks": [
+    {"kind": "main", "title": "Checkout handles expired cards, confirmed on staging", "why": "Top support ticket"}
+  ]
+}
+
+*** Tick a task
+PATCH /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}/tasks/{{(verb-var task-id)}}
+Content-Type: application/json
+# Author, approved plans only
+
+{
+  "is_done": true
+}
+
+*** Submit
+POST /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}/submit
+# Needs a main task with a why (400) and someone who can approve it (409 NO_APPROVER).
+# POST .../withdraw returns a submitted plan to draft.
+
+*** Approve
+POST /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}/approve
+Content-Type: application/json
+# A lead of a team the author is in; a lead's own plan also by an owner/org admin; never yourself.
+
+{
+  "comment": "Good scope."
+}
+
+*** Send back
+POST /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}/request-changes
+Content-Type: application/json
+# Same approvers. Comment required. The plan returns to draft.
+
+{
+  "comment": "Main task won't fit in a week. Pick the half that ships."
+}
+
+*** Close the week
+POST /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}/complete
+Content-Type: application/json
+# Author, approved plans only
+
+{
+  "main_goal_shipped": true,
+  "outcome_note": "Live for all accounts"
+}
+
+*** Waiting for my approval
+GET /organizations/{{(verb-var org-id)}}/approvals
+
+** AI
+# Every call is recorded against the organization. Failures: 503 not configured or
+# provider down, 429 rate limited, 504 timeout, 502 unusable output.
+
+*** AI review of a draft
+POST /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}/ai-review
+# Author, draft only. Stores the review on the plan; shown only to the author.
+# The reviewer can look up the author's own two previous plans (a tool) and flags
+# work that keeps carrying over (issue "carried_over").
+
+*** Draft from a brain dump
+POST /organizations/{{(verb-var org-id)}}/ai/plan-drafts
+Content-Type: application/json
+# Returns a pre-filled plan for the form. Nothing is saved.
+
+{
+  "notes": "need to finish the billing page, probably also fix that webhook bug, should announce it in the changelog"
+}
 
 * Internal API                                                            :verb:
 Template http://localhost:8000/internal
@@ -60,15 +294,16 @@ GET /users/self
 # Requires: Internal authentication (403 ADMIN_REQUIRED otherwise)
 
 ** List users
-GET /users?limit=50&offset=0
+GET /users?q=&limit=50&offset=0
 # Returns: 200 OK with {items, total, limit, offset}
-# Query: limit (1-100, default 50), offset (>=0, default 0)
+# Query: q (name or email, optional), limit (1-100, default 50), offset (>=0, default 0)
 # Requires: Internal authentication
 
 ** Create user
 POST /users
 Content-Type: application/json
-# Returns: 201 Created with the new user
+# Returns: 201 Created with the new user (always a customer account;
+#          staff are only created with `manage.py create-user --admin`)
 # Returns: 409 Conflict if the email already exists
 # Requires: Internal authentication
 
@@ -77,21 +312,27 @@ Content-Type: application/json
   "last_name": "Doe",
   "email": "jane@example.com",
   "password": "secret123",
-  "is_admin": false,
   "is_active": true
 }
+
+** Get user with memberships
+GET /users/{{(verb-var user-id)}}
+# Returns: 200 OK with the user and [{organization_id, organization_name, role, ...}]
+# Requires: Internal authentication
 
 ** Update user (partial)
 PATCH /users/{{(verb-var user-id)}}
 Content-Type: application/json
 # Returns: 200 OK with the updated user
 # Note: only sent fields change; password is ignored here (use change-password)
-# Returns: 404 if not found, 409 on email conflict
+# Note: is_active false deactivates the account and ends its sessions at once;
+#       accounts are never hard-deleted, and is_admin can't be set here
+# Returns: 404 if not found, 409 on email conflict or deactivating yourself
 # Requires: Internal authentication
 
 {
   "last_name": "Smith",
-  "is_admin": true
+  "is_active": false
 }
 
 ** Change user password
@@ -104,8 +345,33 @@ Content-Type: application/json
   "password": "brandnew1"
 }
 
-** Delete user
-DELETE /users/{{(verb-var user-id)}}
-# Returns: 204 No Content (row hard-deleted)
-# Returns: 404 if not found
-# Requires: Internal authentication
+** Organizations (metadata only, never plan content)
+*** List organizations
+GET /organizations?q=&limit=50&offset=0
+# Returns: {items: [{id, name, member_count, team_count, plan_count, last_active_at, suspended_at, ...}], total, limit, offset}
+# Query: status=active|suspended (optional)
+
+*** Organization detail
+GET /organizations/{{(verb-var org-id)}}
+# Members (name, email, role) and teams (name, size, lead)
+
+*** Suspend organization
+POST /organizations/{{(verb-var org-id)}}/suspend
+Content-Type: application/json
+# Locks every member out (403 ORGANIZATION_SUSPENDED) until reinstated; 409 if already suspended
+
+{
+  "reason": "Unpaid invoice"
+}
+
+*** Reinstate organization
+POST /organizations/{{(verb-var org-id)}}/reinstate
+
+** AI usage
+*** Summary per organization
+GET /ai-usage/summary?days=30
+# Calls, succeeded, failed, rate_limited and tokens per organization, plus totals
+
+*** Events
+GET /ai-usage/events?limit=50&offset=0
+# Query: organization_id, outcome=succeeded|failed|rate_limited (both optional)

@@ -1,47 +1,54 @@
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 
-// Launchbase lockup: mark + wordmark share one coordinate system so the gap
-// is exact. Canonical geometry lives in /branding. The dome and "Launch"
-// inherit currentColor (theme-aware); the pad bar and "base" carry Flame.
+// Floppy mark: a document-shaped disk with a folded corner and an F cut out
+// of it. The F and the gap around the fold are holes (a mask), not white
+// paint, so the mark works on light and dark backgrounds. Canonical file:
+// /branding/floppy-mark.svg.
+const BRAND_ORANGE = "#FF5722";
+const BODY =
+  "M25 0H61V26A13 13 0 0 0 74 39H100V82Q100 99 84 105L30 120H25A25 25 0 0 1 0 95V25A25 25 0 0 1 25 0Z";
+const FOLD = "M66 1V23A12 12 0 0 0 78 35H100Z";
+const LETTER_F =
+  "M23 126V66A17 17 0 0 1 40 49H80.5A1.5 1.5 0 0 1 81.6 51.5L71 64H40A10 10 0 0 0 30 74V77H58A8 8 0 0 1 58 93H40A10 10 0 0 0 30 103V126Z";
+
 export function Logomark({ className }: { className?: string }) {
+  const maskId = useId();
   return (
     <svg
-      viewBox="0 0 64 64"
+      viewBox="-4 -4 108 128"
       className={className}
       role="img"
-      aria-label="Launchbase logomark"
+      aria-label="Floppy"
     >
-      <path d="M12 35 A20 20 0 0 1 52 35 Z" fill="currentColor" />
-      <rect x="12" y="43" width="40" height="7" rx="3.5" fill="#FF4F1F" />
+      <defs>
+        <mask id={maskId}>
+          <rect x="-4" y="-4" width="108" height="128" fill="#fff" />
+          <path d={LETTER_F} fill="#000" />
+        </mask>
+      </defs>
+      <g fill={BRAND_ORANGE}>
+        <path d={BODY} mask={`url(#${maskId})`} />
+        <path d={FOLD} />
+      </g>
     </svg>
   );
 }
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 340 64"
-      overflow="visible"
-      className={cn("h-8 w-auto", className)}
+    <span
+      className={cn("inline-flex h-8 items-center gap-2", className)}
       role="img"
-      aria-label="Launchbase"
+      aria-label="Floppy"
     >
-      <g fill="currentColor" transform="translate(-12 -3.5)">
-        <path d="M12 35 A20 20 0 0 1 52 35 Z" />
-        <rect x="12" y="43" width="40" height="7" rx="3.5" fill="#FF4F1F" />
-      </g>
-      <text
-        x="57"
-        y="46"
-        fontFamily="Inter, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
-        fontSize="48"
-        fontWeight="600"
-        letterSpacing="-0.8"
-        fill="currentColor"
+      <Logomark className="h-full w-auto" />
+      <span
+        aria-hidden
+        className="text-[1.4em] leading-none font-bold tracking-tight text-foreground"
       >
-        Launch
-        <tspan fill="#FF4F1F">base</tspan>
-      </text>
-    </svg>
+        Floppy
+      </span>
+    </span>
   );
 }

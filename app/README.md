@@ -1,6 +1,6 @@
-# Launchbase App
+# Floppy App
 
-The Launchbase frontend — a [TanStack Start](https://tanstack.com/start)
+The Floppy customer app (started from the Launchbase template) — a [TanStack Start](https://tanstack.com/start)
 single-page app.
 
 ## Architecture

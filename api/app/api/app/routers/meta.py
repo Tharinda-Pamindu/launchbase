@@ -4,6 +4,7 @@ from sqlalchemy import select, text
 from app.api.app.schemas import (
     AuthRequest,
     AuthResponse,
+    SignupRequest,
 )
 from app.config import settings
 from app.database import DBSession
@@ -16,8 +17,23 @@ from app.security import (
     generate_jwt_token,
     verify_password,
 )
+from app.services.users import UserService
 
 router = APIRouter()
+
+
+def start_session(response: Response, user: User) -> AuthResponse:
+    """Issue an app-audience token and set it as the session cookie."""
+    access_token = generate_jwt_token({"sub": str(user.id)}, audience=JWT_AUDIENCE_APP)
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        samesite="lax",
+        secure=settings.SECURE_COOKIE,
+        httponly=True,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Convert to seconds
+    )
+    return AuthResponse(access_token=access_token)
 
 
 @router.get("/health", tags=["meta"])
@@ -45,28 +61,33 @@ async def auth(
     )
     user = result.scalars().first()
 
+    # Deactivated accounts get the same generic error as bad credentials so
+    # account state isn't disclosed.
     if (
         user
+        and user.is_active
         and user.password is not None
         and verify_password(auth_request.password, user.password)
     ):
-        access_token = generate_jwt_token(
-            {"sub": str(user.id)}, audience=JWT_AUDIENCE_APP
-        )
-        response.set_cookie(
-            key="access_token",
-            value=f"Bearer {access_token}",
-            samesite="lax",
-            secure=settings.SECURE_COOKIE,
-            httponly=True,
-            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Convert to seconds
-        )
-        return AuthResponse(access_token=access_token)
+        return start_session(response, user)
     raise APIException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         code="INVALID_CREDENTIALS",
         message="Incorrect username or password",
     )
+
+
+@router.post("/signup", status_code=status.HTTP_201_CREATED, tags=["auth"])
+async def signup(
+    data: SignupRequest, session: DBSession, response: Response
+) -> AuthResponse:
+    # Sign-up only ever creates customer accounts. Platform staff (`is_admin`)
+    # are created with `manage.py create-user --admin`, never through here.
+    user = await UserService(session).create_user(
+        **data.model_dump(), is_admin=False, is_active=True
+    )
+    await session.commit()
+    return start_session(response, user)
 
 
 @router.post("/logout", tags=["auth"])

@@ -20,6 +20,5 @@ export interface UserCreateRequest {
   email: string;
   /** @minLength 8 */
   password: string;
-  is_admin?: boolean;
   is_active?: boolean;
 }

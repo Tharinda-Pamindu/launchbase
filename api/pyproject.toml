@@ -17,6 +17,7 @@ dependencies = [
     "typer>=0.24.2",
     "asyncpg>=0.31.0",
     "pyjwt>=2.13.0",
+    "pydantic-ai-slim[google]>=2.55.0",
 ]
 
 [tool.pytest.ini_options]

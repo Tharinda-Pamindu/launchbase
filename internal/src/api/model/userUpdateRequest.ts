@@ -10,6 +10,5 @@ export interface UserUpdateRequest {
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
-  is_admin?: boolean | null;
   is_active?: boolean | null;
 }

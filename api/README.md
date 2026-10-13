@@ -1,6 +1,6 @@
-# Launchbase API
+# Floppy API
 
-The Launchbase backend — a SaaS-shaped Python service built on FastAPI.
+The Floppy backend (started from the Launchbase template) — a SaaS-shaped Python service built on FastAPI.
 
 ## Requirements
 

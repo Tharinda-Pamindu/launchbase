@@ -1,6 +1,8 @@
 # Architecture plan
 
-Status: approved direction, 2026-10-13. Implementation has not started yet.
+Status: approved direction, 2026-10-13. Steps 1-9 implemented 2026-10-13 (backend, customer app,
+staff console, landing page). Where the build differs from the first
+draft, this file has been updated to match the code.
 The assessment brief is the source of truth; `docs/PROJECT.md` is the living
 project record. This file captures the Phase 1 repository analysis, the
 proposed architecture, and the decisions taken on it.
@@ -42,10 +44,10 @@ Pre-existing gaps to fix first:
 | D2 | No hard delete of users in the internal panel; deactivate/reactivate instead. Staff accounts are created only via `manage.py create-user --admin`. |
 | D3 | A member's plan is approved only by a lead of a team the author belongs to. A team lead's own plan may be approved by another lead of a shared team or by an org owner/admin. Nobody approves their own plan. No extra roles. |
 | D4 | Minimal timeboxing: per-task hour budget, weekly capacity, deterministic over-capacity warning, estimates fed to the AI scope check. |
-| D5 | One optional extra: Option B "look back before planning", only after required work is solid. |
+| D5 | One optional extra: Option B "look back before planning". Built 2026-10-13: reviewer tool `previous_plans` (author's last two plans, server-scoped), finding `carried_over`. |
 | D6 | Drafts are private to the author; others see only "not submitted". After submission the content is visible to the author's possible approvers (D3). |
-| D7 | Product name: pending user choice. No branding work until then. |
-| D8 | Model `gemini-3.5-flash-lite` via `AI_MODEL` setting; verify the ID during the AI phase. |
+| D7 | Product name: pending user choice. Per the PDF (p.1), the name and SVG logo are settled before implementation so the brand is in the code from the first commit. |
+| D8 | Model `gemini-3.5-flash-lite` (named by the PDF, p.6) via `AI_MODEL` setting; confirm it responds during the AI phase. |
 | D9 | Develop inside WSL 2 (Ubuntu), repository in the WSL filesystem. |
 | D10 | Commit locally in small logical steps; never push (origin is the upstream template). |
 
@@ -58,14 +60,16 @@ organization_memberships    organization_id, user_id, role ('owner'|'admin'|'mem
                             UNIQUE(organization_id, user_id)
 organization_invites        organization_id, email, role ('admin'|'member'), token_hash (sha256, unique),
                             created_by_id, expires_at, accepted_at?, accepted_by_id?, revoked_at?
-teams                       organization_id, name, description?, lead_user_id?,
+teams                       organization_id, name, description?,
                             UNIQUE(organization_id, name), UNIQUE(organization_id, id)
-team_memberships            organization_id, team_id, user_id, UNIQUE(team_id, user_id)
+team_memberships            organization_id, team_id, user_id, is_lead, UNIQUE(team_id, user_id),
+                            partial UNIQUE(team_id) WHERE is_lead (one lead per team; the lead is
+                            always a team member and leaves with their membership)
                             FK (organization_id, team_id) -> teams(organization_id, id) CASCADE
                             FK (organization_id, user_id) -> organization_memberships(...) CASCADE
 weekly_plans                organization_id, user_id, week_start DATE (CHECK Monday),
                             status ('draft'|'submitted'|'approved'|'done') + CHECK,
-                            capacity_hours?, submitted_at?, approved_at?, approved_by_id?,
+                            submitted_at?, approved_at?, approved_by_id?,
                             completed_at?, main_goal_shipped?, outcome_note?,
                             ai_review JSONB?, ai_reviewed_at?, ai_review_plan_hash?,
                             UNIQUE(organization_id, user_id, week_start), INDEX(organization_id, week_start)
@@ -144,12 +148,16 @@ PATCH  /organizations/{org}/plans/{plan}/tasks/{task}
 POST   /organizations/{org}/plans/{plan}/submit|withdraw|approve|request-changes|complete
 POST   /organizations/{org}/plans/{plan}/ai-review          -> PlanReview (stored)
 POST   /organizations/{org}/ai/plan-drafts                  -> PlanDraft (never stored)
+GET    /organizations/{org}/approvals                        submitted plans I can approve
+GET    /ai/status                                            whether AI is configured
 ```
 
 Internal (`/internal`):
 
 ```
 GET  /users?q=   GET /users/{id} (+memberships)   PATCH /users/{id} {is_active}
+(no DELETE /users: accounts are deactivated, never hard-deleted; is_admin is
+not writable from the API)
 GET  /organizations?q=&status=   GET /organizations/{id}   (metadata only)
 POST /organizations/{id}/suspend {reason}   POST /organizations/{id}/reinstate
 GET  /ai-usage/summary?days=   GET /ai-usage/events
@@ -163,7 +171,8 @@ timestamps, member names/emails/roles, team names) but never task text,
 
 - `app/ai/`: `pydantic-ai-slim[google]`, `GoogleModel` + `GoogleProvider`
   with the key passed from settings (`GOOGLE_API_KEY`, server-side only).
-- Agents have typed `output_type` and no tools. Tasks are sent with short
+- Agents have typed `output_type`. The reviewer has one tool, `previous_plans`
+  (the author's last two plans, scoped by the server). Tasks are sent with short
   refs (`MAIN`, `SG1`, `GTM2`) and mapped back server-side; unknown refs are
   dropped.
 - Output models: `ReviewFinding` (task_ref, issue, severity, problem, field,
@@ -190,6 +199,9 @@ timestamps, member names/emails/roles, team names) but never task text,
 
 ## 9. Implementation order
 
+0. Brand (PDF p.1): name, one-line pitch, SVG logo checked at 16/32px and
+   large on light and dark; swap Launchbase's `<title>`, favicon and header
+   in `app/`, `internal/` (marked internal) and `site/`.
 1. Auth hardening (`is_active`), signup.
 2. Tenancy core: orgs, memberships, invites, teams, `OrgContext`, tests.
 3. Plans, tasks, workflow, reviews, team-week and history APIs, tests.
@@ -198,6 +210,8 @@ timestamps, member names/emails/roles, team names) but never task text,
 6. Seed command (`manage.py seed-demo`).
 7. Customer frontend.
 8. Internal frontend.
-9. Branding and landing page (after D7).
-10. Reference features (carry-over, timeboxing) and Option B.
+9. Landing page (PDF p.7–8): hero, how it works, rendered AI review example,
+   for teams, meta, Open Graph image.
+10. At most one optional extra (PDF p.9): Option B, which covers carry-over;
+    timeboxing (D4) only if core work is solid.
 11. QA, `SUBMISSION.md`, packaging from a fresh `git archive`.

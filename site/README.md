@@ -1,6 +1,6 @@
-# Launchbase Site
+# Floppy Site
 
-The Launchbase landing page — a [TanStack Start](https://tanstack.com/start)
+The Floppy landing page (started from the Launchbase template) — a [TanStack Start](https://tanstack.com/start)
 marketing site, statically generated and API-less. Unlike
 [`app/`](../app/README.md), there is no orval-generated API client
 here; it's just static pages and the full
