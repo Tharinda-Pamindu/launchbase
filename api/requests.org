@@ -15,9 +15,24 @@ GET /health
 POST /auth
 Content-Type: application/json
 # Returns: 200 OK with access token
+# Returns: 401 for wrong credentials or a deactivated account
 
 {
   "email": "user@example.com",
+  "password": "11111111"
+}
+
+** Sign up
+POST /signup
+Content-Type: application/json
+# Returns: 201 Created with access token; sets the access_token cookie
+# Returns: 409 Conflict when the email is already registered
+# Note: always creates an active customer account, never platform staff
+
+{
+  "first_name": "Ada",
+  "last_name": "Lovelace",
+  "email": "ada@example.com",
   "password": "11111111"
 }
 

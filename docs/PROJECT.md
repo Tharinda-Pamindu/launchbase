@@ -151,7 +151,7 @@ No implementation, test execution, or submission is recorded yet. The following 
 | Setup / run instructions | Not recorded |
 | Environment variable documentation | Not recorded; document names and setup guidance, never actual secrets |
 | Migration and seed instructions | Not recorded |
-| Test commands and results | Baseline before changes: `uv run pytest` 12 passed (2026-10-13) |
+| Test commands and results | Baseline before changes: `uv run pytest` 12 passed (2026-10-13). After auth hardening and sign-up: 26 passed, ruff and pyright clean (2026-10-13) |
 | Tenant and permission checks | Not run / not recorded |
 | AI feature verification | Not run / not recorded |
 | Known limitations | None recorded yet |

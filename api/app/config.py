@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     SECURE_COOKIE: bool = True
 
     CORS_ORIGINS: str = "http://localhost:3000"
+    # The internal surface only answers the staff console, never the customer
+    # app or the landing page.
+    INTERNAL_CORS_ORIGINS: str = "http://localhost:3002"
 
     # JWT Token settings
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
@@ -51,6 +54,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+    @property
+    def internal_cors_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.INTERNAL_CORS_ORIGINS.split(",")]
 
 
 settings = Settings()

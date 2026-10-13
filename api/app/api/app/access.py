@@ -86,7 +86,12 @@ async def get_current_user(session: DBSession, access_token: str, audience: str)
     if access_token:
         try:
             sub = decode_access_token(access_token, audience)
-            return await get_user_by_id(user_id=sub, session=session)
+            user = await get_user_by_id(user_id=sub, session=session)
+            # Checked per request, not only at login, so deactivating an
+            # account ends its existing sessions immediately.
+            if not user.is_active:
+                raise http_credentials_exception
+            return user
         except (APIException, ResourceNotFoundException):
             # Re-raise our custom exceptions
             raise
