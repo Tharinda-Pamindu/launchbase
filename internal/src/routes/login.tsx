@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Lock, LogIn, Mail, ShieldCheck } from "lucide-react";
 import { auth } from "@/api/endpoints/auth/auth";
 import { applyApiErrorToForm } from "@/lib/api-error";
+import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -74,16 +75,18 @@ function Login() {
     <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground p-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-5 text-center">
+          <Logo className="h-9" />
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             <ShieldCheck className="size-3.5 text-[#FF4F1F]" />
             Internal · Restricted
           </span>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Internal console
+              Floppy staff console
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Sign in with your staff credentials.
+              For the team that runs Floppy. Customer accounts can't sign in
+              here.
             </p>
           </div>
         </div>

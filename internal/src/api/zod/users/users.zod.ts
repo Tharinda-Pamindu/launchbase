@@ -24,6 +24,8 @@ export const GetCurrentInternalUserResponse = zod.object({
 /**
  * @summary User List
  */
+export const userListQueryQOneMax = 100;
+
 export const userListQueryLimitDefault = 50;
 export const userListQueryLimitMax = 100;
 
@@ -31,6 +33,10 @@ export const userListQueryOffsetDefault = 0;
 export const userListQueryOffsetMin = 0;
 
 export const UserListQueryParams = zod.object({
+  q: zod
+    .union([zod.string().max(userListQueryQOneMax), zod.null()])
+    .optional()
+    .describe("Name or email"),
   limit: zod
     .number()
     .int()
@@ -66,6 +72,7 @@ export const UserListResponse = zod.object({
 });
 
 /**
+ * Create a customer account. Staff are only created from the CLI.
  * @summary User Create
  */
 export const userCreateBodyFirstNameMax = 100;
@@ -74,7 +81,6 @@ export const userCreateBodyLastNameMax = 100;
 
 export const userCreateBodyPasswordMin = 8;
 
-export const userCreateBodyIsAdminDefault = false;
 export const userCreateBodyIsActiveDefault = true;
 
 export const UserCreateBody = zod.object({
@@ -82,7 +88,6 @@ export const UserCreateBody = zod.object({
   last_name: zod.string().min(1).max(userCreateBodyLastNameMax),
   email: zod.string().email(),
   password: zod.string().min(userCreateBodyPasswordMin),
-  is_admin: zod.boolean().default(userCreateBodyIsAdminDefault),
   is_active: zod.boolean().default(userCreateBodyIsActiveDefault),
 });
 
@@ -98,6 +103,36 @@ export const UserCreateResponse = zod.object({
 });
 
 /**
+ * A user and the organizations they belong to.
+ * @summary User Get
+ */
+export const UserGetParams = zod.object({
+  user_id: zod.string().uuid(),
+});
+
+export const UserGetResponse = zod.object({
+  id: zod.string(),
+  created_at: zod.string().datetime({ offset: true }),
+  updated_at: zod.union([zod.string().datetime({ offset: true }), zod.null()]),
+  first_name: zod.string(),
+  last_name: zod.string(),
+  email: zod.string(),
+  is_admin: zod.boolean(),
+  is_active: zod.boolean(),
+  memberships: zod.array(
+    zod.object({
+      organization_id: zod.string(),
+      organization_name: zod.string(),
+      role: zod.enum(["owner", "admin", "member"]),
+      organization_suspended: zod.boolean(),
+      joined_at: zod.string().datetime({ offset: true }),
+    })
+  ),
+});
+
+/**
+ * Edit a user, or deactivate them with `is_active: false`. Deactivation
+ * ends their sessions at once; accounts are never hard-deleted.
  * @summary User Update
  */
 export const UserUpdateParams = zod.object({
@@ -116,7 +151,6 @@ export const UserUpdateBody = zod.object({
     .union([zod.string().min(1).max(userUpdateBodyLastNameOneMax), zod.null()])
     .optional(),
   email: zod.union([zod.string().email(), zod.null()]).optional(),
-  is_admin: zod.union([zod.boolean(), zod.null()]).optional(),
   is_active: zod.union([zod.boolean(), zod.null()]).optional(),
 });
 
@@ -130,15 +164,6 @@ export const UserUpdateResponse = zod.object({
   is_admin: zod.boolean(),
   is_active: zod.boolean(),
 });
-
-/**
- * @summary User Delete
- */
-export const UserDeleteParams = zod.object({
-  user_id: zod.string().uuid(),
-});
-
-export const UserDeleteResponse = zod.void();
 
 /**
  * @summary User Change Password

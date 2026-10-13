@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, LogOut, Users } from "lucide-react";
+import { Building2, Gauge, LogOut, Sparkles, Users } from "lucide-react";
 import { logout } from "@/api/endpoints/auth/auth";
 import { useCurrentUser } from "@/contexts/user-context";
 import { Logo } from "@/components/Logo";
@@ -10,8 +10,10 @@ import { cn } from "@/lib/utils";
 // `as const` keeps the hrefs as literal types, so TanStack Router can
 // type-check them against the generated route tree.
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/overview", label: "Overview", icon: Gauge },
+  { href: "/organizations", label: "Organizations", icon: Building2 },
   { href: "/users", label: "Users", icon: Users },
+  { href: "/ai-usage", label: "AI usage", icon: Sparkles },
 ] as const;
 
 export function Sidebar() {
@@ -38,14 +40,14 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r bg-background">
       <div className="flex h-16 items-center px-6">
-        <Link to="/dashboard" aria-label="Launchbase">
+        <Link to="/overview" aria-label="Floppy internal console">
           <Logo className="h-7" />
         </Link>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+          const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}
@@ -87,7 +89,7 @@ export function Sidebar() {
           onClick={() => logoutMutation.mutate()}
         >
           <LogOut className="size-4" />
-          {logoutMutation.isPending ? "Signing out..." : "Logout"}
+          {logoutMutation.isPending ? "Signing out..." : "Sign out"}
         </Button>
       </div>
     </aside>

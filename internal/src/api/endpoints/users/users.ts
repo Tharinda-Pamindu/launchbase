@@ -23,6 +23,7 @@ import type {
 
 import type {
   HTTPValidationError,
+  InternalUserDetailResponse,
   InternalUserResponse,
   UserChangePasswordRequest,
   UserCreateRequest,
@@ -370,6 +371,7 @@ export const getUserCreateUrl = () => {
 };
 
 /**
+ * Create a customer account. Staff are only created from the CLI.
  * @summary User Create
  */
 export const userCreate = async (
@@ -453,11 +455,160 @@ export const useUserCreate = <
 > => {
   return useMutation(getUserCreateMutationOptions(options), queryClient);
 };
+export const getUserGetUrl = (userId: string) => {
+  return `/users/${userId}`;
+};
+
+/**
+ * A user and the organizations they belong to.
+ * @summary User Get
+ */
+export const userGet = async (
+  userId: string,
+  options?: Parameters<typeof customInstance>[1]
+): Promise<InternalUserDetailResponse> => {
+  return customInstance<InternalUserDetailResponse>(getUserGetUrl(userId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getUserGetQueryKey = (userId: string) => {
+  return [`/users/${userId}`] as const;
+};
+
+export const getUserGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof userGet>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  userId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof userGet>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getUserGetQueryKey(userId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof userGet>>> = ({
+    signal,
+  }) => userGet(userId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: userId !== null && userId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof userGet>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type UserGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof userGet>>
+>;
+export type UserGetQueryError = ErrorType<HTTPValidationError>;
+
+export function useUserGet<
+  TData = Awaited<ReturnType<typeof userGet>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  userId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof userGet>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof userGet>>,
+          TError,
+          Awaited<ReturnType<typeof userGet>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useUserGet<
+  TData = Awaited<ReturnType<typeof userGet>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  userId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof userGet>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof userGet>>,
+          TError,
+          Awaited<ReturnType<typeof userGet>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useUserGet<
+  TData = Awaited<ReturnType<typeof userGet>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  userId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof userGet>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary User Get
+ */
+
+export function useUserGet<
+  TData = Awaited<ReturnType<typeof userGet>>,
+  TError = ErrorType<HTTPValidationError>,
+>(
+  userId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof userGet>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getUserGetQueryOptions(userId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getUserUpdateUrl = (userId: string) => {
   return `/users/${userId}`;
 };
 
 /**
+ * Edit a user, or deactivate them with `is_active: false`. Deactivation
+ * ends their sessions at once; accounts are never hard-deleted.
  * @summary User Update
  */
 export const userUpdate = async (
@@ -541,92 +692,6 @@ export const useUserUpdate = <
   TContext
 > => {
   return useMutation(getUserUpdateMutationOptions(options), queryClient);
-};
-export const getUserDeleteUrl = (userId: string) => {
-  return `/users/${userId}`;
-};
-
-/**
- * @summary User Delete
- */
-export const userDelete = async (
-  userId: string,
-  options?: Parameters<typeof customInstance>[1]
-): Promise<void> => {
-  return customInstance<void>(getUserDeleteUrl(userId), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getUserDeleteMutationOptions = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof userDelete>>,
-    TError,
-    { userId: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customInstance>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof userDelete>>,
-  TError,
-  { userId: string },
-  TContext
-> => {
-  const mutationKey = ["userDelete"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof userDelete>>,
-    { userId: string }
-  > = (props) => {
-    const { userId } = props ?? {};
-
-    return userDelete(userId, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UserDeleteMutationResult = NonNullable<
-  Awaited<ReturnType<typeof userDelete>>
->;
-
-export type UserDeleteMutationError = ErrorType<HTTPValidationError>;
-
-/**
- * @summary User Delete
- */
-export const useUserDelete = <
-  TError = ErrorType<HTTPValidationError>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof userDelete>>,
-      TError,
-      { userId: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof userDelete>>,
-  TError,
-  { userId: string },
-  TContext
-> => {
-  return useMutation(getUserDeleteMutationOptions(options), queryClient);
 };
 export const getUserChangePasswordUrl = (userId: string) => {
   return `/users/${userId}/change-password`;

@@ -267,7 +267,10 @@ class DemoBuilder:
         for user, role in users.values():
             self.session.add(
                 OrganizationMembership(
-                    organization_id=org.id, user_id=user.id, role=role
+                    organization_id=org.id,
+                    user_id=user.id,
+                    role=role,
+                    created_at=org.created_at,
                 )
             )
         await self.session.flush()

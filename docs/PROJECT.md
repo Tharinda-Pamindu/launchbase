@@ -105,7 +105,7 @@ The earlier discussion also positioned the product around weekly planning and ap
 - [x] Inspect Launchbase and record existing functionality and required changes. Evidence: `docs/ARCHITECTURE.md` section 1 (2026-10-13).
 - [ ] Implement and verify the required weekly planning workflow.
 - [x] Implement and verify tenant separation, authentication, and authorization. Evidence: section 7 (API; UI pending).
-- [ ] Implement and verify the internal admin panel.
+- [x] Implement and verify the internal admin panel. Evidence: section 7 (API tests; UI walk-through 2026-10-13).
 - [ ] Implement and verify AI plan review.
 - [ ] Implement and verify brain-dump-to-draft.
 - [ ] Finalize product name and implement branding and landing page.
@@ -155,7 +155,7 @@ No implementation, test execution, or submission is recorded yet. The following 
 | Environment variable documentation | Not recorded; document names and setup guidance, never actual secrets |
 | Migration and seed instructions | Migration `e8260ca82850`; `uv run alembic check` reports no drift. Seed: `uv run manage.py seed-demo [--reset]`, password `floppy-demo-1` for every demo account (member marco@, lead leila@, owner olivia@, org admin arjun@northwind.example; staff staff@floppy.example) |
 | Test commands and results | Baseline before changes: `uv run pytest` 12 passed (2026-10-13). After auth hardening and sign-up: 26 passed, ruff and pyright clean (2026-10-13). After the backend (tenancy, plans, AI, internal API): `uv run pytest` 68 passed with no key and no network; ruff and pyright clean (2026-10-13) |
-| Tenant and permission checks | `tests/api/app/test_tenancy.py` (foreign ids 404 on every org route, route meta-test, suspension), `test_plans.py` (D3 approver rules, D6 draft privacy), internal tests (customers refused, staff can't grant staff). Re-checked on seeded data through a running API (2026-10-13). UI walk-through: member sees "team week is for leads", lead approves and sends back (draft then hidden), another org's owner gets "not a member" for a Northwind URL, invite link -> sign-up -> join |
+| Tenant and permission checks | `tests/api/app/test_tenancy.py` (foreign ids 404 on every org route, route meta-test, suspension), `test_plans.py` (D3 approver rules, D6 draft privacy), internal tests (customers refused, staff can't grant staff). Re-checked on seeded data through a running API (2026-10-13). UI walk-through: member sees "team week is for leads", lead approves and sends back (draft then hidden), another org's owner gets "not a member" for a Northwind URL, invite link -> sign-up -> join. Staff console walk-through: an org owner can't sign in; org detail shows no plan text; suspending locks a signed-in member out and reinstating restores them; deactivating a user ends their open session |
 | AI feature verification | Offline: `tests/api/app/test_ai.py` with TestModel/FunctionModel (ref mapping, staleness, 429/502/503/504, usage rows, local rate limit, nothing saved by drafts). Live: one review and one draft against `gemini-3.5-flash-lite` with the local key returned typed output (2026-10-13); instructions then tightened to use [placeholders] instead of invented details. Through the UI (Playwright, headless Chromium): brain dump -> draft -> AI review -> apply a suggestion -> submit, against the live model; reviewer told not to show internal task labels to people |
 | Known limitations | None recorded yet |
 | Deployment / demo link, if required | Production deployment is out of scope per the written brief |
@@ -187,6 +187,7 @@ No implementation, test execution, or submission is recorded yet. The following 
 | 2026-10-13 | Product name Floppy and tagline "Less strain. More brain." | User decision |
 | 2026-10-13 | Backend steps 1-6 done: sign-up, tenancy, teams, plans workflow, AI agents, internal API, seed command; team lead stored as `team_memberships.is_lead` | Implementation; see `docs/ARCHITECTURE.md` |
 | 2026-10-13 | Logo adopted from the user's design and redrawn as SVG; customer app (step 7) built: sign-up, invites, organizations, my week with AI draft and review, approvals, teams and team week, history, settings | User decision; implementation |
+| 2026-10-13 | Internal staff console (step 8): marked internal on every page, overview, organizations with suspend/reinstate, users with search, detail and deactivate/reactivate (no delete, no granting staff), AI usage by organization and by call | Implementation |
 
 ## 9. Maintenance rules
 
