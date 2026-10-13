@@ -108,7 +108,7 @@ The earlier discussion also positioned the product around weekly planning and ap
 - [x] Implement and verify the internal admin panel. Evidence: section 7 (API tests; UI walk-through 2026-10-13).
 - [ ] Implement and verify AI plan review.
 - [ ] Implement and verify brain-dump-to-draft.
-- [ ] Finalize product name and implement branding and landing page.
+- [x] Finalize product name and implement branding and landing page. Evidence: section 5; `site/` landing page checked at 1280px and 390px (no horizontal overflow), title, meta description and Open Graph image (2026-10-13).
 - [ ] Add the required seed data and reproducible setup instructions. Seed command done (section 7); `SUBMISSION.md` instructions pending.
 - [ ] Complete the required tests and record results.
 - [ ] Prepare and verify every required submission artifact.
@@ -119,7 +119,11 @@ The earlier discussion also positioned the product around weekly planning and ap
 
 **Approved tagline:** Less strain. More brain. (user decision, 2026-10-13; replaces the earlier "Your second brain").
 
-Logo: the user supplied a raster design on 2026-10-13; it was redrawn as SVG (`branding/floppy-mark.svg`, the F and fold gap are mask cut-outs so it works on dark backgrounds) and rendered at 16/32/64/256px on light and dark. Still open for PDF p.2: the one-line pitch (who it is for and what it does) and the sentence on why the name was chosen. Whether "Floppy" is already an obvious, well-known product in the same space has not been checked yet.
+Logo: the user supplied a raster design on 2026-10-13; it was redrawn as SVG (`branding/floppy-mark.svg`, the F and fold gap are mask cut-outs so it works on dark backgrounds) and rendered at 16/32/64/256px on light and dark. **One-line pitch** (user choice, 2026-10-13): Floppy gets every engineer on your team to commit to one thing they'll ship this week, reviewed before you approve it, so by Friday you know what actually shipped.
+
+**Why the name** (user choice, 2026-10-13): Floppy is named after the floppy disk: small, familiar, and it holds exactly one week of work. It's easy to say and to spell.
+
+**Name check** (web search, 2026-10-13): no well-known team or weekly-planning product called Floppy turned up. The nearest match is FloppyData, an AI data-automation tool, which is in a different space. Domains and trademarks were not checked.
 
 Names suggested in the referenced conversation: Weekmind, Planora, Shipmind, Focusly, Weekwise, Planflow, Taskmind, Mindweek, Flowweek, Syncmind, and Weekship. Earlier assistant preferences for Weekmind and Shipmind were recommendations only. Name availability, existing products, domains, and trademark conflicts have not been researched.
 
@@ -134,7 +138,7 @@ Longer tagline variants suggested earlier were not selected. Keep the confirmed 
 | ID | Question / missing item | Status |
 | --- | --- | --- |
 | OPEN-01 | Accessible assessment PDF and its exact requirements | Resolved 2026-10-13: PDF read; criteria in section 4 |
-| OPEN-02 | Final product name and logo | Name and tagline decided 2026-10-13 (Floppy, "Less strain. More brain."); pitch, name rationale, conflict check and logo open |
+| OPEN-02 | Final product name and logo | Resolved 2026-10-13: Floppy, tagline, pitch, name rationale, logo; name check done (section 5) |
 | OPEN-03 | Launchbase repository URL and starting revision | Resolved: `github.com/chamoda/launchbase`, baseline `af4ad1f` |
 | OPEN-04 | Exact tenant, team, membership, and permission model | Decided in `docs/ARCHITECTURE.md` (D1, D3, D6) |
 | OPEN-05 | Weekly plan fields, lifecycle, approvals, and time rules | Decided in `docs/ARCHITECTURE.md` section 4 |
@@ -188,6 +192,8 @@ No implementation, test execution, or submission is recorded yet. The following 
 | 2026-10-13 | Backend steps 1-6 done: sign-up, tenancy, teams, plans workflow, AI agents, internal API, seed command; team lead stored as `team_memberships.is_lead` | Implementation; see `docs/ARCHITECTURE.md` |
 | 2026-10-13 | Logo adopted from the user's design and redrawn as SVG; customer app (step 7) built: sign-up, invites, organizations, my week with AI draft and review, approvals, teams and team week, history, settings | User decision; implementation |
 | 2026-10-13 | Internal staff console (step 8): marked internal on every page, overview, organizations with suspend/reinstate, users with search, detail and deactivate/reactivate (no delete, no granting staff), AI usage by organization and by call | Implementation |
+| 2026-10-13 | One-line pitch and name rationale chosen; web check found no well-known product called Floppy in team planning | User decision; web search |
+| 2026-10-13 | Landing page (step 9): hero with tagline and pitch, why not Notion/Linear/spreadsheets, how a week works, a rendered AI review example, the lead's view, Open Graph image | Implementation |
 
 ## 9. Maintenance rules
 
