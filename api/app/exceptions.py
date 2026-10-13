@@ -64,3 +64,12 @@ class ConflictException(APIException):
             message=message,
             field=field,
         )
+
+
+class ForbiddenException(APIException):
+    def __init__(self, message: str, code: str = "FORBIDDEN"):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=code,
+            message=message,
+        )

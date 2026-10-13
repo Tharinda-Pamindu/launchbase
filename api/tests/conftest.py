@@ -43,6 +43,26 @@ warnings.filterwarnings(
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="asyncpg.*")
 
 
+@pytest.fixture(autouse=True)
+def no_real_ai(monkeypatch):
+    """Tests never reach Gemini: no key, and Pydantic AI refuses real model
+    requests. AI tests opt in to a fake key together with TestModel or
+    FunctionModel."""
+    from pydantic_ai import models
+
+    from app.config import settings
+
+    monkeypatch.setattr(models, "ALLOW_MODEL_REQUESTS", False)
+    monkeypatch.setattr(settings, "GOOGLE_API_KEY", "")
+
+
+@pytest.fixture
+async def world(session_factory):
+    from tests.factories import build_world
+
+    return await build_world(session_factory)
+
+
 @pytest.fixture(scope="session")
 def postgres_container():
     """Start PostgreSQL container for tests."""

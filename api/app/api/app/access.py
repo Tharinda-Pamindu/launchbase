@@ -1,3 +1,5 @@
+import uuid
+from dataclasses import dataclass
 from typing import Annotated
 
 import jwt
@@ -8,9 +10,13 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import settings
 from app.database import DBSession
-from app.exceptions import APIException, ResourceNotFoundException
+from app.exceptions import (
+    APIException,
+    ForbiddenException,
+    ResourceNotFoundException,
+)
 from app.logging import logger
-from app.models import User
+from app.models import Organization, OrganizationMembership, OrgRole, User
 from app.security import JWT_AUDIENCE_APP
 
 http_credentials_exception = APIException(
@@ -146,3 +152,64 @@ get_current_http_user = build_http_user_dependency(
 )
 
 CurrentUser = Annotated[User, Depends(get_current_http_user)]
+
+
+@dataclass(frozen=True)
+class OrgContext:
+    """The caller, the organization in the URL, and their membership of it.
+
+    Every `/organizations/{organization_id}/...` route depends on this, so the
+    organization is always resolved through the caller's own membership.
+    """
+
+    user: User
+    organization: Organization
+    membership: OrganizationMembership
+
+    @property
+    def organization_id(self) -> uuid.UUID:
+        return self.organization.id
+
+    @property
+    def role(self) -> str:
+        return self.membership.role
+
+    @property
+    def is_manager(self) -> bool:
+        """Owner or org admin (a customer role, not platform staff)."""
+        return self.membership.role in OrgRole.MANAGERS
+
+    def require_manager(self) -> None:
+        if not self.is_manager:
+            raise ForbiddenException(
+                "Only organization owners and admins can do this.",
+                code="ORG_ADMIN_REQUIRED",
+            )
+
+
+async def get_org_context(
+    organization_id: uuid.UUID, user: CurrentUser, session: DBSession
+) -> OrgContext:
+    row = (
+        await session.execute(
+            select(OrganizationMembership, Organization)
+            .join(Organization)
+            .where(
+                OrganizationMembership.organization_id == organization_id,
+                OrganizationMembership.user_id == user.id,
+            )
+        )
+    ).first()
+    # Not a member looks the same as not existing, so IDs can't be probed.
+    if row is None:
+        raise ResourceNotFoundException("Organization not found")
+    membership, organization = row
+    if organization.suspended_at is not None:
+        raise ForbiddenException(
+            "This organization is suspended. Contact support to restore access.",
+            code="ORGANIZATION_SUSPENDED",
+        )
+    return OrgContext(user=user, organization=organization, membership=membership)
+
+
+CurrentOrg = Annotated[OrgContext, Depends(get_org_context)]

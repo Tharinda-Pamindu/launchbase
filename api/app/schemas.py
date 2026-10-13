@@ -27,3 +27,12 @@ class MessageResponse(Model):
 
 class HealthCheckResponse(Model):
     status: str  # "healthy" or "unhealthy"
+
+
+class Page[T](Model):
+    """A page of a list endpoint: `{items, total, limit, offset}`."""
+
+    items: list[T]
+    total: int
+    limit: int
+    offset: int

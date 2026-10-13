@@ -26,6 +26,20 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     JWT_ALGORITHM: str = "HS256"
 
+    # Organization invite links point at the customer app and stay valid for
+    # this long.
+    APP_URL: str = "http://localhost:3001"
+    INVITE_EXPIRE_DAYS: int = 14
+
+    # AI (Pydantic AI + Gemini). The key is only ever read server-side; with no
+    # key the AI endpoints answer 503 and planning works without them.
+    GOOGLE_API_KEY: str = ""
+    AI_MODEL: str = "gemini-3.5-flash-lite"
+    AI_TIMEOUT_SECONDS: float = 30.0
+    # Per-user calls per minute before we refuse locally, so one person can't
+    # spend the organization's (low, free-tier) provider quota.
+    AI_RATE_LIMIT_PER_MINUTE: int = 6
+
     # Cloudflare API token for SSL certificates
     CLOUDFLARE_API_TOKEN: str | None = None
 
