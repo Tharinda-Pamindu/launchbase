@@ -109,9 +109,9 @@ The earlier discussion also positioned the product around weekly planning and ap
 - [ ] Implement and verify AI plan review.
 - [ ] Implement and verify brain-dump-to-draft.
 - [x] Finalize product name and implement branding and landing page. Evidence: section 5; `site/` landing page checked at 1280px and 390px (no horizontal overflow), title, meta description and Open Graph image (2026-10-13).
-- [ ] Add the required seed data and reproducible setup instructions. Seed command done (section 7); `SUBMISSION.md` instructions pending.
-- [ ] Complete the required tests and record results.
-- [ ] Prepare and verify every required submission artifact.
+- [x] Add the required seed data and reproducible setup instructions. Evidence: `manage.py seed-demo`, `SUBMISSION.md`.
+- [x] Complete the required tests and record results. Evidence: section 7.
+- [ ] Prepare and verify every required submission artifact. `SUBMISSION.md` written; `git archive` zip verified from a fresh unzip and a fresh Postgres (2026-10-13). Pending: the author's real hours, then the final commit and archive.
 
 ## 5. Branding decisions and idea backlog
 
@@ -194,6 +194,7 @@ No implementation, test execution, or submission is recorded yet. The following 
 | 2026-10-13 | Internal staff console (step 8): marked internal on every page, overview, organizations with suspend/reinstate, users with search, detail and deactivate/reactivate (no delete, no granting staff), AI usage by organization and by call | Implementation |
 | 2026-10-13 | One-line pitch and name rationale chosen; web check found no well-known product called Floppy in team planning | User decision; web search |
 | 2026-10-13 | Landing page (step 9): hero with tagline and pitch, why not Notion/Linear/spreadsheets, how a week works, a rendered AI review example, the lead's view, Open Graph image | Implementation |
+| 2026-10-13 | QA and packaging (step 11): `SUBMISSION.md`; READMEs rebranded; sign-in labels tied to inputs; `git archive` zip (about 1 MB) unpacked into a fresh folder: no `.env`, `node_modules`, `.venv`, `dist` or API key inside; against a new Postgres 16 it migrated, `alembic check` was clean, seeded, passed 68 tests, served a lead login, and all three front ends validated and built | Verification |
 
 ## 9. Maintenance rules
 
