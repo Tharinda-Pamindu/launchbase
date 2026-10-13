@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     APP_URL: str = "http://localhost:3001"
     INVITE_EXPIRE_DAYS: int = 14
 
+    # Password for every account `manage.py seed-demo` creates. Only the seed
+    # command reads it; it refuses to run while this is empty.
+    DEMO_PASSWORD: str = ""
+
     # AI (Pydantic AI + Gemini). The key is only ever read server-side; with no
     # key the AI endpoints answer 503 and planning works without them.
     GOOGLE_API_KEY: str = ""

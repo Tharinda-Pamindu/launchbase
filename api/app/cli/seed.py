@@ -8,6 +8,7 @@ from datetime import UTC, datetime, time, timedelta
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models import (
     AiOperation,
     AiOutcome,
@@ -28,7 +29,6 @@ from app.models import (
 from app.security import hash_password
 from app.services.plans import current_monday
 
-DEMO_PASSWORD = "floppy-demo-1"
 DEMO_DOMAINS = ("northwind.example", "harbor.example", "floppy.example")
 DEMO_ORGS = ("Northwind Labs", "Harbor Health")
 WEEKS_OF_HISTORY = 5
@@ -178,7 +178,7 @@ class DemoBuilder:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.rng = random.Random(7)  # same demo every time
-        self.password = hash_password(DEMO_PASSWORD)
+        self.password = hash_password(settings.DEMO_PASSWORD)
         self.this_monday = current_monday()
 
     async def build(self) -> dict[str, str]:
@@ -245,6 +245,7 @@ class DemoBuilder:
             "Org owner": "olivia@northwind.example",
             "Org admin": "arjun@northwind.example",
             "Other org owner": "hana@harbor.example",
+            "Carried-over work (AI look-back)": CARRY_OVER_EMAIL,
             "Platform staff (internal panel)": staff.email,
         }
 

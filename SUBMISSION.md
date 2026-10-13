@@ -10,10 +10,20 @@
   you know what actually shipped.
 - **Why the name:** Floppy is named after the floppy disk: small, familiar, and
   it holds exactly one week of work. It's easy to say and to spell.
+- **Name check:** I considered OpenMind and OpenSesame first and dropped both:
+  a search found existing technology businesses already using them
+  ([OpenMind](https://openmind.com/),
+  [OpenSesame](https://www.opensesame.com/about/)). For Floppy, a web search on
+  2026-10-13 for "Floppy" as a weekly planner, task manager or SaaS planning
+  tool found no well-known product in team planning with that name. The tools
+  that came up are the ones teams already plan in (Notion, Linear, Week Plan,
+  Sunsama, Toggl Plan, Float). Domain availability and trademark clearance
+  were not checked.
 - **Logo:** `branding/floppy-mark.svg`. A document-shaped disk with a folded
   corner and a cut-out F. The F and the fold gap are holes, not white paint, so
-  it works on light and dark backgrounds. It was checked at 16, 32, 64 and
-  256 px, and it is the favicon in all three front ends.
+  it works on light and dark backgrounds. It is the favicon in all three front
+  ends. Rendered at 16, 32 and 64 px on light and dark backgrounds:
+  `docs/checks/logo-16-32-64-light-dark.png`.
 
 ## How to run it
 
@@ -27,6 +37,7 @@ cd api
 cp .env.example .env      # set SECRET_KEY and SQLALCHEMY_DATABASE_URI for your Postgres
                           # GOOGLE_API_KEY is optional: without it the AI buttons are hidden
                           # and the AI endpoints answer 503; planning still works
+                          # set DEMO_PASSWORD: seed-demo gives it to every demo account
 uv sync
 uv run alembic upgrade head
 uv run manage.py seed-demo        # add --reset to rebuild the demo later
@@ -45,7 +56,8 @@ network access to Google.
 
 ### Demo logins
 
-Every demo account uses the password **`floppy-demo-1`**.
+Run `uv run manage.py seed-demo` after setting `DEMO_PASSWORD` in `api/.env`.
+Every demo account uses that password; the command prints it with these logins.
 
 | Who | Email | Where |
 | --- | --- | --- |
@@ -54,18 +66,43 @@ Every demo account uses the password **`floppy-demo-1`**.
 | Org owner | `olivia@northwind.example` | app |
 | Org admin (a customer role) | `arjun@northwind.example` | app |
 | Owner of the second organization | `hana@harbor.example` | app |
+| Member with carried-over work (AI look-back) | `tom@northwind.example` | app |
 | Platform staff | `staff@floppy.example` | internal console |
+
+### More accounts
+
+- **Customers:** sign up in the app (http://localhost:3001/signup), create an
+  organization, and invite others from its settings page.
+- **Platform staff:** `uv run manage.py create-user --first-name ... --last-name ...
+  --email ... --admin`. Leave out `--password` and it prints a generated one.
+  Staff can't be created through sign-up.
 
 The demo has two organizations (Northwind Labs, Harbor Health), three teams
 with leads, and someone in two teams (Tom). It covers five closed weeks with
 some main goals shipped and some not. This week has plans that are approved,
 waiting for approval, sent back, or not started.
-It also has AI usage history for the staff view. More staff accounts:
-`uv run manage.py create-user --admin ...`.
+It also has AI usage history for the staff view.
 
 ## Your hours
 
-**[To fill in: the actual number of hours spent.]**
+About 8–10 hours. The commits run from 07:43 to 16:14 on 2026-10-13, plus
+setup before the first commit and the final checks after the last one.
+
+## How it was built
+
+Built with Claude Code, driven the way the brief describes:
+
+- **Plan first.** The first commit (`2c88e41`, "Add project record and
+  architecture plan") is `docs/PROJECT.md` and `docs/ARCHITECTURE.md`: the
+  data model, the tenancy rules and the AI design, before any code. The next
+  commit aligned that plan with the brief, and `CLAUDE.md` loads `AGENTS.md`.
+- **Small steps.** Then one commit per part: sign-up, the API, the seed, the
+  customer app, the staff console, the landing page, the submission, and the
+  look-back extra.
+- **Checks the agent could run itself.** 70 API tests, the seed command, the
+  running dev servers, and scripted browser runs (listed under "What isn't
+  done"). Phone-width screenshots with no sideways scroll:
+  `docs/checks/site-375.png` and `docs/checks/app-login-375.png`.
 
 ## Decisions worth knowing
 

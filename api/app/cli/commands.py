@@ -8,7 +8,8 @@ from sqlalchemy import select
 from typer import BadParameter, Option, Typer
 
 from app.cli.schemas import UserCreate
-from app.cli.seed import DEMO_PASSWORD, DemoBuilder, demo_exists, reset_demo
+from app.cli.seed import DemoBuilder, demo_exists, reset_demo
+from app.config import settings
 from app.database import AsyncSessionLocal, async_engine
 from app.models import User
 from app.security import hash_password
@@ -110,6 +111,8 @@ async def seed_demo(
 ):
     """Create a demo: two organizations, teams with leads, members in every
     role, and several weeks of plans, some shipped and some not."""
+    if not settings.DEMO_PASSWORD:
+        raise BadParameter("Set DEMO_PASSWORD in api/.env first.")
     if await demo_exists(session):
         if not reset:
             raise BadParameter("The demo already exists. Pass --reset to rebuild it.")
@@ -117,7 +120,7 @@ async def seed_demo(
     logins = await DemoBuilder(session).build()
     await session.commit()
 
-    print(f"Demo created. Every demo account's password is: {DEMO_PASSWORD}")
+    print(f"Demo created. Every demo account's password is: {settings.DEMO_PASSWORD}")
     width = max(len(role) for role in logins)
     for role, email in logins.items():
         print(f"  {role:<{width}}  {email}")
