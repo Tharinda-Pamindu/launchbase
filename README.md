@@ -1,13 +1,18 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="branding/banner-dark.svg">
-    <img src="branding/banner-light.svg" alt="Launchbase — a polyglot monorepo template" width="100%">
-  </picture>
+  <img src="branding/floppy-mark.svg" alt="Floppy" width="96">
 </p>
 
-A pragmatic polyglot monorepo template: a FastAPI backend and TanStack Start
-frontends, with shared tooling wired for monorepo development. Opinionated
-defaults so you can skip the wiring and start building.
+# Floppy
+
+**Less strain. More brain.** Weekly planning for software teams: every
+engineer commits to one thing they'll ship this week, reviewed before their
+lead approves it, so by Friday the team knows what actually shipped.
+
+Running it, demo logins and what's not done: see [SUBMISSION.md](SUBMISSION.md).
+
+Floppy started from Launchbase, a polyglot monorepo template: a FastAPI
+backend and TanStack Start frontends, with shared tooling wired for monorepo
+development.
 
 ## Structure
 
