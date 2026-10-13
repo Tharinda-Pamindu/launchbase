@@ -8,6 +8,7 @@ from sqlalchemy import select
 from typer import BadParameter, Option, Typer
 
 from app.cli.schemas import UserCreate
+from app.cli.seed import DEMO_PASSWORD, DemoBuilder, demo_exists, reset_demo
 from app.database import AsyncSessionLocal, async_engine
 from app.models import User
 from app.security import hash_password
@@ -54,9 +55,8 @@ cli = AsyncTyper()
 
 @cli.callback()
 def main():
-    """Launchbase management CLI."""
-    # Present so Typer always runs in subcommand mode (`manage.py user-create`),
-    # even while there is only a single command registered.
+    """Floppy management CLI."""
+    # Present so Typer always runs in subcommand mode (`manage.py create-user`).
 
 
 @cli.command()
@@ -100,3 +100,24 @@ async def create_user(
     print(f"{'Admin' if admin else 'User'} created: ", user.id)
     if generated:
         print("Generated password: ", password)
+
+
+@cli.command()
+async def seed_demo(
+    reset: bool = Option(
+        False, "--reset", help="Delete the demo organizations and users first."
+    ),
+):
+    """Create a demo: two organizations, teams with leads, members in every
+    role, and several weeks of plans, some shipped and some not."""
+    if await demo_exists(session):
+        if not reset:
+            raise BadParameter("The demo already exists. Pass --reset to rebuild it.")
+        await reset_demo(session)
+    logins = await DemoBuilder(session).build()
+    await session.commit()
+
+    print(f"Demo created. Every demo account's password is: {DEMO_PASSWORD}")
+    width = max(len(role) for role in logins)
+    for role, email in logins.items():
+        print(f"  {role:<{width}}  {email}")

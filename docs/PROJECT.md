@@ -32,8 +32,8 @@ Status vocabulary: **Confirmed** = explicit user decision; **Required — user-s
 | --- | --- | --- |
 | Product type | AI-assisted weekly planning SaaS | Confirmed |
 | Target audience | Software/company teams | Confirmed |
-| Tagline | **Your second brain** | Confirmed; preserve this exact wording |
-| Product name | Not yet finalized; user will choose later | Open |
+| Tagline | **Less strain. More brain.** | Confirmed 2026-10-13; replaces "Your second brain"; preserve this exact wording |
+| Product name | **Floppy** | Confirmed 2026-10-13; one-line pitch, why-the-name sentence and SVG logo still open |
 | Starter repository | **Launchbase**, used as the starter Git repository/monorepo | Required — user-supplied |
 | Architecture | Data model, tenancy, permissions, workflow, API, AI design in `docs/ARCHITECTURE.md` | Confirmed 2026-10-13 (decisions D1–D10) |
 
@@ -103,20 +103,22 @@ The earlier discussion also positioned the product around weekly planning and ap
 - [x] Obtain and read the assessment PDF; add page references and precise acceptance criteria to REQ-01 through REQ-09. Evidence: section 4 table (2026-10-13).
 - [x] Inspect Launchbase and record existing functionality and required changes. Evidence: `docs/ARCHITECTURE.md` section 1 (2026-10-13).
 - [ ] Implement and verify the required weekly planning workflow.
-- [ ] Implement and verify tenant separation, authentication, and authorization.
+- [x] Implement and verify tenant separation, authentication, and authorization. Evidence: section 7 (API; UI pending).
 - [ ] Implement and verify the internal admin panel.
 - [ ] Implement and verify AI plan review.
 - [ ] Implement and verify brain-dump-to-draft.
 - [ ] Finalize product name and implement branding and landing page.
-- [ ] Add the required seed data and reproducible setup instructions.
+- [ ] Add the required seed data and reproducible setup instructions. Seed command done (section 7); `SUBMISSION.md` instructions pending.
 - [ ] Complete the required tests and record results.
 - [ ] Prepare and verify every required submission artifact.
 
 ## 5. Branding decisions and idea backlog
 
-**Approved tagline:** Your second brain
+**Product name:** Floppy (user decision, 2026-10-13).
 
-**Product name:** Open. No candidate has been approved. The PDF (p.1) asks for the name and logo before any code, so this is now the next decision.
+**Approved tagline:** Less strain. More brain. (user decision, 2026-10-13; replaces the earlier "Your second brain").
+
+Still open for PDF p.2: the one-line pitch (who it is for and what it does), the sentence on why the name was chosen, and the SVG logo. Whether "Floppy" is already an obvious, well-known product in the same space has not been checked yet.
 
 Names suggested in the referenced conversation: Weekmind, Planora, Shipmind, Focusly, Weekwise, Planflow, Taskmind, Mindweek, Flowweek, Syncmind, and Weekship. Earlier assistant preferences for Weekmind and Shipmind were recommendations only. Name availability, existing products, domains, and trademark conflicts have not been researched.
 
@@ -131,7 +133,7 @@ Longer tagline variants suggested earlier were not selected. Keep the confirmed 
 | ID | Question / missing item | Status |
 | --- | --- | --- |
 | OPEN-01 | Accessible assessment PDF and its exact requirements | Resolved 2026-10-13: PDF read; criteria in section 4 |
-| OPEN-02 | Final product name and logo | Awaiting decision; blocks implementation per PDF p.1 |
+| OPEN-02 | Final product name and logo | Name and tagline decided 2026-10-13 (Floppy, "Less strain. More brain."); pitch, name rationale, conflict check and logo open |
 | OPEN-03 | Launchbase repository URL and starting revision | Resolved: `github.com/chamoda/launchbase`, baseline `af4ad1f` |
 | OPEN-04 | Exact tenant, team, membership, and permission model | Decided in `docs/ARCHITECTURE.md` (D1, D3, D6) |
 | OPEN-05 | Weekly plan fields, lifecycle, approvals, and time rules | Decided in `docs/ARCHITECTURE.md` section 4 |
@@ -148,12 +150,12 @@ No implementation, test execution, or submission is recorded yet. The following 
 | Evidence | Current value |
 | --- | --- |
 | Project repository and branch | Local clone of `github.com/chamoda/launchbase`, branch `build/weekly-planning` (not pushed) |
-| Setup / run instructions | Not recorded |
+| Setup / run instructions | Backend: `cd api && uv run alembic upgrade head`; `GOOGLE_API_KEY` in `api/.env` (optional; AI endpoints return 503 without it) |
 | Environment variable documentation | Not recorded; document names and setup guidance, never actual secrets |
-| Migration and seed instructions | Not recorded |
-| Test commands and results | Baseline before changes: `uv run pytest` 12 passed (2026-10-13). After auth hardening and sign-up: 26 passed, ruff and pyright clean (2026-10-13) |
-| Tenant and permission checks | Not run / not recorded |
-| AI feature verification | Not run / not recorded |
+| Migration and seed instructions | Migration `e8260ca82850`; `uv run alembic check` reports no drift. Seed: `uv run manage.py seed-demo [--reset]`, password `floppy-demo-1` for every demo account (member marco@, lead leila@, owner olivia@, org admin arjun@northwind.example; staff staff@floppy.example) |
+| Test commands and results | Baseline before changes: `uv run pytest` 12 passed (2026-10-13). After auth hardening and sign-up: 26 passed, ruff and pyright clean (2026-10-13). After the backend (tenancy, plans, AI, internal API): `uv run pytest` 68 passed with no key and no network; ruff and pyright clean (2026-10-13) |
+| Tenant and permission checks | `tests/api/app/test_tenancy.py` (foreign ids 404 on every org route, route meta-test, suspension), `test_plans.py` (D3 approver rules, D6 draft privacy), internal tests (customers refused, staff can't grant staff). Re-checked on seeded data through a running API (2026-10-13) |
+| AI feature verification | Offline: `tests/api/app/test_ai.py` with TestModel/FunctionModel (ref mapping, staleness, 429/502/503/504, usage rows, local rate limit, nothing saved by drafts). Live: one review and one draft against `gemini-3.5-flash-lite` with the local key returned typed output (2026-10-13); instructions then tightened to use [placeholders] instead of invented details |
 | Known limitations | None recorded yet |
 | Deployment / demo link, if required | Production deployment is out of scope per the written brief |
 | Final submission checklist and deadline | Checklist in the written brief; deadline unknown |
@@ -181,6 +183,8 @@ No implementation, test execution, or submission is recorded yet. The following 
 | 2026-10-13 | D9: develop in WSL 2 Ubuntu with the repository inside the WSL filesystem | User decision |
 | 2026-10-13 | D10: commit locally in small steps; do not push | User decision |
 | 2026-10-13 | Read the assessment PDF; replaced REQ-01–REQ-09 with its criteria and page references; logged discrepancies; moved name and logo ahead of implementation; added `CLAUDE.md` | PDF `se-intern-weekly-planner-assement.pdf` |
+| 2026-10-13 | Product name Floppy and tagline "Less strain. More brain." | User decision |
+| 2026-10-13 | Backend steps 1-6 done: sign-up, tenancy, teams, plans workflow, AI agents, internal API, seed command; team lead stored as `team_memberships.is_lead` | Implementation; see `docs/ARCHITECTURE.md` |
 
 ## 9. Maintenance rules
 
@@ -240,7 +244,7 @@ This example is an inference from Notion's documented building blocks. It has no
 | Team boundaries | Notion has granular sharing controls. Our SaaS still needs its own verified tenant isolation; Notion teamspaces are not an implementation specification for our tenancy model. |
 | Product focus | Emphasize the quality and simplicity of the complete weekly workflow. Avoid competing on the number of generic documentation, database, or AI features. |
 
-Working positioning hypothesis: **a focused weekly planning product that helps software teams turn rough ideas into reviewable plans and track delivery.** Validate this against the PDF and user decisions before using it as final landing-page copy. The approved tagline remains **“Your second brain.”**
+Working positioning hypothesis: **a focused weekly planning product that helps software teams turn rough ideas into reviewable plans and track delivery.** Validate this against the PDF and user decisions before using it as final landing-page copy. The approved tagline is now **“Less strain. More brain.”**
 
 ## 11. Competitor reference — Linear capabilities
 

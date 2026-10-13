@@ -1,6 +1,8 @@
 # Architecture plan
 
-Status: approved direction, 2026-10-13. Implementation has not started yet.
+Status: approved direction, 2026-10-13. Backend (steps 1-6) implemented
+2026-10-13; frontends not yet. Where the build differs from the first
+draft, this file has been updated to match the code.
 The assessment brief is the source of truth; `docs/PROJECT.md` is the living
 project record. This file captures the Phase 1 repository analysis, the
 proposed architecture, and the decisions taken on it.
@@ -58,14 +60,16 @@ organization_memberships    organization_id, user_id, role ('owner'|'admin'|'mem
                             UNIQUE(organization_id, user_id)
 organization_invites        organization_id, email, role ('admin'|'member'), token_hash (sha256, unique),
                             created_by_id, expires_at, accepted_at?, accepted_by_id?, revoked_at?
-teams                       organization_id, name, description?, lead_user_id?,
+teams                       organization_id, name, description?,
                             UNIQUE(organization_id, name), UNIQUE(organization_id, id)
-team_memberships            organization_id, team_id, user_id, UNIQUE(team_id, user_id)
+team_memberships            organization_id, team_id, user_id, is_lead, UNIQUE(team_id, user_id),
+                            partial UNIQUE(team_id) WHERE is_lead (one lead per team; the lead is
+                            always a team member and leaves with their membership)
                             FK (organization_id, team_id) -> teams(organization_id, id) CASCADE
                             FK (organization_id, user_id) -> organization_memberships(...) CASCADE
 weekly_plans                organization_id, user_id, week_start DATE (CHECK Monday),
                             status ('draft'|'submitted'|'approved'|'done') + CHECK,
-                            capacity_hours?, submitted_at?, approved_at?, approved_by_id?,
+                            submitted_at?, approved_at?, approved_by_id?,
                             completed_at?, main_goal_shipped?, outcome_note?,
                             ai_review JSONB?, ai_reviewed_at?, ai_review_plan_hash?,
                             UNIQUE(organization_id, user_id, week_start), INDEX(organization_id, week_start)
@@ -144,12 +148,16 @@ PATCH  /organizations/{org}/plans/{plan}/tasks/{task}
 POST   /organizations/{org}/plans/{plan}/submit|withdraw|approve|request-changes|complete
 POST   /organizations/{org}/plans/{plan}/ai-review          -> PlanReview (stored)
 POST   /organizations/{org}/ai/plan-drafts                  -> PlanDraft (never stored)
+GET    /organizations/{org}/approvals                        submitted plans I can approve
+GET    /ai/status                                            whether AI is configured
 ```
 
 Internal (`/internal`):
 
 ```
 GET  /users?q=   GET /users/{id} (+memberships)   PATCH /users/{id} {is_active}
+(no DELETE /users: accounts are deactivated, never hard-deleted; is_admin is
+not writable from the API)
 GET  /organizations?q=&status=   GET /organizations/{id}   (metadata only)
 POST /organizations/{id}/suspend {reason}   POST /organizations/{id}/reinstate
 GET  /ai-usage/summary?days=   GET /ai-usage/events

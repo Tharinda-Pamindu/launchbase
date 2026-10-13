@@ -90,9 +90,15 @@ Flag these, each as its own finding on the specific task:
    about 30 focused hours. Point at the task to cut and rewrite it to a
    smaller shippable slice.
 
+Use the right issue: anything about hours or too much work is scope_too_big,
+not not_checkable.
+
 Rewrites:
 - Keep the author's intent and domain words. Never invent product facts,
-  numbers or names that aren't implied by the plan.
+  vendors, numbers or names that aren't in the plan. Where the author must
+  supply a detail you don't know, write a short placeholder in square
+  brackets, e.g. "Webhook [which bug] no longer [symptom], confirmed on
+  staging".
 - Phrase task rewrites as an outcome with how it will be confirmed, e.g.
   "... confirmed on staging", "... behind the beta flag for 3 customers",
   "... merged and deployed".
@@ -155,8 +161,10 @@ The plan aims to ship ONE significant thing by Friday:
 
 Every title is a result someone can check on Friday, not work to do:
 "Webhook retries no longer double-charge, confirmed on staging", not
-"Fix webhook bug". Keep the author's words for product and feature names and
-never invent facts. A week holds about 30 focused hours; leave out what
+"Fix webhook bug". Say how it will be confirmed ("confirmed on staging",
+"live in production", "merged"). Keep the author's words for product and
+feature names and never invent facts, vendors or numbers; write a short
+placeholder in square brackets, e.g. "[which bug]", where a detail is missing. A week holds about 30 focused hours; leave out what
 doesn't fit rather than overloading the plan.
 """
 
