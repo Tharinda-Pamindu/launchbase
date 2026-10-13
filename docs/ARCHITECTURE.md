@@ -1,7 +1,7 @@
 # Architecture plan
 
-Status: approved direction, 2026-10-13. Backend (steps 1-6) implemented
-2026-10-13; frontends not yet. Where the build differs from the first
+Status: approved direction, 2026-10-13. Backend (steps 1-6) and customer app (step 7) implemented
+2026-10-13; internal console and landing page not yet. Where the build differs from the first
 draft, this file has been updated to match the code.
 The assessment brief is the source of truth; `docs/PROJECT.md` is the living
 project record. This file captures the Phase 1 repository analysis, the

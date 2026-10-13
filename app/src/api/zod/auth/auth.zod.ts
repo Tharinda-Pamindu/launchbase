@@ -20,6 +20,27 @@ export const AuthResponse = zod.object({
 });
 
 /**
+ * @summary Signup
+ */
+export const signupBodyFirstNameMax = 100;
+
+export const signupBodyLastNameMax = 100;
+
+export const signupBodyPasswordMin = 8;
+export const signupBodyPasswordMax = 128;
+
+export const SignupBody = zod.object({
+  first_name: zod.string().min(1).max(signupBodyFirstNameMax),
+  last_name: zod.string().min(1).max(signupBodyLastNameMax),
+  email: zod.string().email(),
+  password: zod.string().min(signupBodyPasswordMin).max(signupBodyPasswordMax),
+});
+
+export const SignupResponse = zod.object({
+  access_token: zod.string(),
+});
+
+/**
  * @summary Logout
  */
 export const LogoutResponse = zod.object({

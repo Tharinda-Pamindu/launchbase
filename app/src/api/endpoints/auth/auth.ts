@@ -18,6 +18,7 @@ import type {
   AuthResponse,
   HTTPValidationError,
   MessageResponse,
+  SignupRequest,
 } from "../../model";
 
 import { customInstance } from "../../../lib/api-client";
@@ -110,6 +111,94 @@ export const useAuth = <
   TContext
 > => {
   return useMutation(getAuthMutationOptions(options), queryClient);
+};
+export const getSignupUrl = () => {
+  return `/signup`;
+};
+
+/**
+ * @summary Signup
+ */
+export const signup = async (
+  signupRequest: SignupRequest,
+  options?: Parameters<typeof customInstance>[1]
+): Promise<AuthResponse> => {
+  return customInstance<AuthResponse>(getSignupUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(signupRequest),
+  });
+};
+
+export const getSignupMutationOptions = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signup>>,
+    TError,
+    { data: BodyType<SignupRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signup>>,
+  TError,
+  { data: BodyType<SignupRequest> },
+  TContext
+> => {
+  const mutationKey = ["signup"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signup>>,
+    { data: BodyType<SignupRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return signup(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signup>>
+>;
+export type SignupMutationBody = BodyType<SignupRequest>;
+export type SignupMutationError = ErrorType<HTTPValidationError>;
+
+/**
+ * @summary Signup
+ */
+export const useSignup = <
+  TError = ErrorType<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signup>>,
+      TError,
+      { data: BodyType<SignupRequest> },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof signup>>,
+  TError,
+  { data: BodyType<SignupRequest> },
+  TContext
+> => {
+  return useMutation(getSignupMutationOptions(options), queryClient);
 };
 export const getLogoutUrl = () => {
   return `/logout`;

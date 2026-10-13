@@ -33,7 +33,8 @@ Status vocabulary: **Confirmed** = explicit user decision; **Required — user-s
 | Product type | AI-assisted weekly planning SaaS | Confirmed |
 | Target audience | Software/company teams | Confirmed |
 | Tagline | **Less strain. More brain.** | Confirmed 2026-10-13; replaces "Your second brain"; preserve this exact wording |
-| Product name | **Floppy** | Confirmed 2026-10-13; one-line pitch, why-the-name sentence and SVG logo still open |
+| Product name | **Floppy** | Confirmed 2026-10-13; one-line pitch and why-the-name sentence still open |
+| Logo | Orange (#FF5722) document-shaped disk with a folded corner and a cut-out F, from the user's design (2026-10-13); SVG in `branding/floppy-mark.svg` | Confirmed; checked at 16, 32, 64 and 256px on light and dark |
 | Starter repository | **Launchbase**, used as the starter Git repository/monorepo | Required — user-supplied |
 | Architecture | Data model, tenancy, permissions, workflow, API, AI design in `docs/ARCHITECTURE.md` | Confirmed 2026-10-13 (decisions D1–D10) |
 
@@ -118,7 +119,7 @@ The earlier discussion also positioned the product around weekly planning and ap
 
 **Approved tagline:** Less strain. More brain. (user decision, 2026-10-13; replaces the earlier "Your second brain").
 
-Still open for PDF p.2: the one-line pitch (who it is for and what it does), the sentence on why the name was chosen, and the SVG logo. Whether "Floppy" is already an obvious, well-known product in the same space has not been checked yet.
+Logo: the user supplied a raster design on 2026-10-13; it was redrawn as SVG (`branding/floppy-mark.svg`, the F and fold gap are mask cut-outs so it works on dark backgrounds) and rendered at 16/32/64/256px on light and dark. Still open for PDF p.2: the one-line pitch (who it is for and what it does) and the sentence on why the name was chosen. Whether "Floppy" is already an obvious, well-known product in the same space has not been checked yet.
 
 Names suggested in the referenced conversation: Weekmind, Planora, Shipmind, Focusly, Weekwise, Planflow, Taskmind, Mindweek, Flowweek, Syncmind, and Weekship. Earlier assistant preferences for Weekmind and Shipmind were recommendations only. Name availability, existing products, domains, and trademark conflicts have not been researched.
 
@@ -154,8 +155,8 @@ No implementation, test execution, or submission is recorded yet. The following 
 | Environment variable documentation | Not recorded; document names and setup guidance, never actual secrets |
 | Migration and seed instructions | Migration `e8260ca82850`; `uv run alembic check` reports no drift. Seed: `uv run manage.py seed-demo [--reset]`, password `floppy-demo-1` for every demo account (member marco@, lead leila@, owner olivia@, org admin arjun@northwind.example; staff staff@floppy.example) |
 | Test commands and results | Baseline before changes: `uv run pytest` 12 passed (2026-10-13). After auth hardening and sign-up: 26 passed, ruff and pyright clean (2026-10-13). After the backend (tenancy, plans, AI, internal API): `uv run pytest` 68 passed with no key and no network; ruff and pyright clean (2026-10-13) |
-| Tenant and permission checks | `tests/api/app/test_tenancy.py` (foreign ids 404 on every org route, route meta-test, suspension), `test_plans.py` (D3 approver rules, D6 draft privacy), internal tests (customers refused, staff can't grant staff). Re-checked on seeded data through a running API (2026-10-13) |
-| AI feature verification | Offline: `tests/api/app/test_ai.py` with TestModel/FunctionModel (ref mapping, staleness, 429/502/503/504, usage rows, local rate limit, nothing saved by drafts). Live: one review and one draft against `gemini-3.5-flash-lite` with the local key returned typed output (2026-10-13); instructions then tightened to use [placeholders] instead of invented details |
+| Tenant and permission checks | `tests/api/app/test_tenancy.py` (foreign ids 404 on every org route, route meta-test, suspension), `test_plans.py` (D3 approver rules, D6 draft privacy), internal tests (customers refused, staff can't grant staff). Re-checked on seeded data through a running API (2026-10-13). UI walk-through: member sees "team week is for leads", lead approves and sends back (draft then hidden), another org's owner gets "not a member" for a Northwind URL, invite link -> sign-up -> join |
+| AI feature verification | Offline: `tests/api/app/test_ai.py` with TestModel/FunctionModel (ref mapping, staleness, 429/502/503/504, usage rows, local rate limit, nothing saved by drafts). Live: one review and one draft against `gemini-3.5-flash-lite` with the local key returned typed output (2026-10-13); instructions then tightened to use [placeholders] instead of invented details. Through the UI (Playwright, headless Chromium): brain dump -> draft -> AI review -> apply a suggestion -> submit, against the live model; reviewer told not to show internal task labels to people |
 | Known limitations | None recorded yet |
 | Deployment / demo link, if required | Production deployment is out of scope per the written brief |
 | Final submission checklist and deadline | Checklist in the written brief; deadline unknown |
@@ -185,6 +186,7 @@ No implementation, test execution, or submission is recorded yet. The following 
 | 2026-10-13 | Read the assessment PDF; replaced REQ-01–REQ-09 with its criteria and page references; logged discrepancies; moved name and logo ahead of implementation; added `CLAUDE.md` | PDF `se-intern-weekly-planner-assement.pdf` |
 | 2026-10-13 | Product name Floppy and tagline "Less strain. More brain." | User decision |
 | 2026-10-13 | Backend steps 1-6 done: sign-up, tenancy, teams, plans workflow, AI agents, internal API, seed command; team lead stored as `team_memberships.is_lead` | Implementation; see `docs/ARCHITECTURE.md` |
+| 2026-10-13 | Logo adopted from the user's design and redrawn as SVG; customer app (step 7) built: sign-up, invites, organizations, my week with AI draft and review, approvals, teams and team week, history, settings | User decision; implementation |
 
 ## 9. Maintenance rules
 

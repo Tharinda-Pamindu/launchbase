@@ -93,6 +93,10 @@ Flag these, each as its own finding on the specific task:
 Use the right issue: anything about hours or too much work is scope_too_big,
 not not_checkable.
 
+Labels like MAIN, SG1 and GTM1 are only for task_ref. The author never sees
+them, so in summary and problem refer to tasks by what they say ("the
+webhook task", "your main task").
+
 Rewrites:
 - Keep the author's intent and domain words. Never invent product facts,
   vendors, numbers or names that aren't in the plan. Where the author must
