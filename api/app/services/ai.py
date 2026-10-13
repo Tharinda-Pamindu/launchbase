@@ -12,7 +12,14 @@ from pydantic_ai.exceptions import (
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.agents import PlanDraft, PlanReview, drafter, get_model, reviewer
+from app.ai.agents import (
+    PlanDraft,
+    PlanReview,
+    ReviewDeps,
+    drafter,
+    get_model,
+    reviewer,
+)
 from app.config import settings
 from app.exceptions import APIException, ForbiddenException, ValidationException
 from app.logging import logger
@@ -55,7 +62,7 @@ def render_plan(plan: WeeklyPlan, refs: dict[str, Any]) -> str:
     if "MAIN" not in refs:
         lines += ["MAIN: (no main task)", ""]
     for ref, task in refs.items():
-        estimate = f" [{task.estimate_hours}h]" if task.estimate_hours else ""
+        estimate = f" (estimated {task.estimate_hours}h)" if task.estimate_hours else ""
         lines.append(f"{ref}: {task.title}{estimate}")
         if task.kind == TaskKind.MAIN:
             lines.append(f"  why: {task.why or '(not given)'}")
@@ -132,8 +139,19 @@ class AiService:
                 "Add some tasks before asking for a review.", field="tasks"
             )
         refs = task_refs(plan)
+        # The look-back tool reads only this author's own earlier plans.
+        deps = ReviewDeps(
+            session=self.session,
+            organization_id=plan.organization_id,
+            user_id=plan.user_id,
+            week_start=plan.week_start,
+        )
         review = await self._run(
-            actor, AiOperation.PLAN_REVIEW, reviewer, render_plan(plan, refs)
+            actor,
+            AiOperation.PLAN_REVIEW,
+            reviewer,
+            render_plan(plan, refs),
+            deps=deps,
         )
         plan.ai_review = map_review(review, refs)
         plan.ai_reviewed_at = datetime.now(UTC)
@@ -149,8 +167,9 @@ class AiService:
         self,
         actor: OrganizationMembership,
         operation: str,
-        agent: Agent[None, T],
+        agent: Agent[Any, T],
         prompt: str,
+        deps: Any = None,
     ) -> T:
         def record(outcome: str, error_kind: str | None = None, **usage: Any):
             self.session.add(
@@ -186,7 +205,7 @@ class AiService:
 
         try:
             result = await asyncio.wait_for(
-                agent.run(prompt, model=get_model()),
+                agent.run(prompt, model=get_model(), deps=deps),
                 timeout=settings.AI_TIMEOUT_SECONDS,
             )
         except TimeoutError:

@@ -5,15 +5,22 @@ has to parse. The model is chosen at run time (`get_model`) so tests can
 swap in `TestModel` / `FunctionModel` with `agent.override(model=...)`.
 """
 
+import uuid
+from dataclasses import dataclass
+from datetime import date
 from functools import cache
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent
+from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
+from app.models import WeeklyPlan
 
 # -- Plan review ---------------------------------------------------------------
 
@@ -22,8 +29,33 @@ ReviewIssue = Literal[
     "missing_why",  # main task doesn't say why it matters
     "missing_gtm",  # nothing puts the work in front of users
     "scope_too_big",  # won't fit in one week
+    "carried_over",  # repeats unfinished work from the last two weeks
     "unclear",  # too vague to act on for another reason
 ]
+
+
+@dataclass
+class ReviewDeps:
+    """Whose plan is being reviewed. Set by the server, never by the model, so
+    the look-back tool can only ever read this author's own plans."""
+
+    session: AsyncSession
+    organization_id: uuid.UUID
+    user_id: uuid.UUID
+    week_start: date
+
+
+class PreviousTask(BaseModel):
+    kind: Literal["main", "sub_goal", "gtm"]
+    title: str
+    done: bool
+
+
+class PreviousPlan(BaseModel):
+    week_start: date
+    status: str
+    main_task_shipped: bool | None
+    tasks: list[PreviousTask]
 
 
 class ReviewFinding(BaseModel):
@@ -89,6 +121,14 @@ Flag these, each as its own finding on the specific task:
    one engineer. Hour estimates, when given, are the engineer's; a week holds
    about 30 focused hours. Point at the task to cut and rewrite it to a
    smaller shippable slice.
+5. carried_over: call previous_plans first. If a task in this plan is the
+   same work as a task that was not done in one of those weeks (even if it is
+   worded differently), or as a main task that didn't ship, flag it on this
+   plan's task. Say how long it has been carrying over ("this is the third
+   week") and rewrite its title (field "title") as a slice that can really be
+   finished this week.
+   Don't flag work that was finished, and don't invent history: if
+   previous_plans returns nothing, there is nothing to flag.
 
 Use the right issue: anything about hours or too much work is scope_too_big,
 not not_checkable.
@@ -106,7 +146,7 @@ Rewrites:
 - Phrase task rewrites as an outcome with how it will be confirmed, e.g.
   "... confirmed on staging", "... behind the beta flag for 3 customers",
   "... merged and deployed".
-- Keep titles under 20 words.
+- Keep titles under 20 words, and never put hour estimates in a title.
 
 Do not flag a task that is already a checkable result. If the plan is good,
 approve it with no or few "consider" findings. Approve only when there is no
@@ -115,11 +155,46 @@ no praise padding.
 """
 
 reviewer = Agent(
+    deps_type=ReviewDeps,
     output_type=PlanReview,
     instructions=REVIEW_INSTRUCTIONS,
     retries=2,
     model_settings={"temperature": 0.2},
 )
+
+
+@reviewer.tool
+async def previous_plans(ctx: RunContext[ReviewDeps]) -> list[PreviousPlan]:
+    """The author's two most recent plans before this week, newest first, with
+    which tasks got done and whether the main task shipped."""
+    deps = ctx.deps
+    result = await deps.session.execute(
+        select(WeeklyPlan)
+        .options(selectinload(WeeklyPlan.tasks))
+        .where(
+            WeeklyPlan.organization_id == deps.organization_id,
+            WeeklyPlan.user_id == deps.user_id,
+            WeeklyPlan.week_start < deps.week_start,
+        )
+        .order_by(WeeklyPlan.week_start.desc())
+        .limit(2)
+    )
+    return [
+        PreviousPlan(
+            week_start=plan.week_start,
+            status=plan.status,
+            main_task_shipped=plan.main_goal_shipped,
+            tasks=[
+                PreviousTask(
+                    kind=task.kind,  # pyright: ignore[reportArgumentType]
+                    title=task.title,
+                    done=task.is_done,
+                )
+                for task in plan.tasks
+            ],
+        )
+        for plan in result.scalars().all()
+    ]
 
 
 # -- Draft from a brain dump ---------------------------------------------------

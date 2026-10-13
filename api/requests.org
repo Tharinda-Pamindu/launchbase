@@ -252,6 +252,8 @@ GET /organizations/{{(verb-var org-id)}}/approvals
 *** AI review of a draft
 POST /organizations/{{(verb-var org-id)}}/plans/{{(verb-var plan-id)}}/ai-review
 # Author, draft only. Stores the review on the plan; shown only to the author.
+# The reviewer can look up the author's own two previous plans (a tool) and flags
+# work that keeps carrying over (issue "carried_over").
 
 *** Draft from a brain dump
 POST /organizations/{{(verb-var org-id)}}/ai/plan-drafts

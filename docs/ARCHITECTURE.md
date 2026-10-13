@@ -44,7 +44,7 @@ Pre-existing gaps to fix first:
 | D2 | No hard delete of users in the internal panel; deactivate/reactivate instead. Staff accounts are created only via `manage.py create-user --admin`. |
 | D3 | A member's plan is approved only by a lead of a team the author belongs to. A team lead's own plan may be approved by another lead of a shared team or by an org owner/admin. Nobody approves their own plan. No extra roles. |
 | D4 | Minimal timeboxing: per-task hour budget, weekly capacity, deterministic over-capacity warning, estimates fed to the AI scope check. |
-| D5 | One optional extra: Option B "look back before planning", only after required work is solid. |
+| D5 | One optional extra: Option B "look back before planning". Built 2026-10-13: reviewer tool `previous_plans` (author's last two plans, server-scoped), finding `carried_over`. |
 | D6 | Drafts are private to the author; others see only "not submitted". After submission the content is visible to the author's possible approvers (D3). |
 | D7 | Product name: pending user choice. Per the PDF (p.1), the name and SVG logo are settled before implementation so the brand is in the code from the first commit. |
 | D8 | Model `gemini-3.5-flash-lite` (named by the PDF, p.6) via `AI_MODEL` setting; confirm it responds during the AI phase. |
@@ -171,7 +171,8 @@ timestamps, member names/emails/roles, team names) but never task text,
 
 - `app/ai/`: `pydantic-ai-slim[google]`, `GoogleModel` + `GoogleProvider`
   with the key passed from settings (`GOOGLE_API_KEY`, server-side only).
-- Agents have typed `output_type` and no tools. Tasks are sent with short
+- Agents have typed `output_type`. The reviewer has one tool, `previous_plans`
+  (the author's last two plans, scoped by the server). Tasks are sent with short
   refs (`MAIN`, `SG1`, `GTM2`) and mapped back server-side; unknown refs are
   dropped.
 - Output models: `ReviewFinding` (task_ref, issue, severity, problem, field,

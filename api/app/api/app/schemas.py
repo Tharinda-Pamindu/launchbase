@@ -230,7 +230,12 @@ class AiFindingResponse(Model):
     task_ref: str
     task_kind: TaskKindName
     issue: Literal[
-        "not_checkable", "missing_why", "missing_gtm", "scope_too_big", "unclear"
+        "not_checkable",
+        "missing_why",
+        "missing_gtm",
+        "scope_too_big",
+        "carried_over",
+        "unclear",
     ]
     severity: Literal["must_fix", "consider"]
     problem: str

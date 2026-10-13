@@ -269,6 +269,7 @@ function AiReview() {
               "Asks why the main task matters, when the plan doesn't say.",
               "Notices when nothing puts the work in front of users.",
               "Calls out scope that won't fit in a week, using your hour estimates.",
+              "Looks back at your last two weeks and flags work that keeps carrying over.",
               "Every finding sits next to its task with a rewrite you apply in one click.",
             ].map((item) => (
               <li key={item} className="flex gap-2">

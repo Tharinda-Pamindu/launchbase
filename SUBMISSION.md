@@ -40,7 +40,7 @@ cd site && npm install && make run       # landing page   http://localhost:3000
 
 `tmuxp load .` from the repo root starts all four.
 
-Tests: `cd api && uv run pytest`. It runs 68 tests with no Google key and no
+Tests: `cd api && uv run pytest`. It runs 70 tests with no Google key and no
 network access to Google.
 
 ### Demo logins
@@ -100,9 +100,23 @@ It also has AI usage history for the staff view. More staff accounts:
   failures, is recorded against the organization for the staff usage view.
   There's also a per-user limit of 6 calls a minute.
 
+## Optional extra: look back before planning
+
+The plan reviewer has a tool, `previous_plans`, that returns the author's
+two most recent earlier plans: each task, whether it got done, and whether
+the main task shipped. The tool takes no arguments. The server fixes whose
+plans and which organization, so the model can't ask for anyone else's. When
+this week's plan repeats unfinished work, the review flags it as **carried
+over** on that task and suggests a slice that can be finished this week. The
+demo has a real case: Tom's main task didn't ship the last two weeks and is
+back on this week's draft. Sign in as `tom@northwind.example` and run
+**Review with AI**. Tests cover what the tool returns: only that author, only
+the last two plans, and nothing when there is no history.
+
 ## What isn't done
 
-- **Optional extras:** none of the three was built.
+- **Optional extras:** only "look back before planning" (above); the
+  end-of-week summary and team digest weren't built.
 - **Timeboxing is minimal:** per-task hour estimates, a total, and a warning
   above about 30 hours. There's no per-person capacity setting.
 - **Team history uses today's members.** If someone moves teams, past weekly
@@ -120,6 +134,5 @@ It also has AI usage history for the staff view. More staff accounts:
 - **Out of scope by the brief:** email, billing, SSO, notifications and
   deployment.
 
-With another day I'd do the "look back before planning" extra, which flags
-work that keeps carrying over. I'd also add per-person capacity and store
-review history.
+With another day I'd add per-person capacity, keep review history, and give
+leads the team digest (what's at risk, who hasn't submitted).

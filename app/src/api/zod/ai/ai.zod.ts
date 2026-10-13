@@ -70,6 +70,7 @@ export const PlanAiReviewResponse = zod.object({
             "missing_why",
             "missing_gtm",
             "scope_too_big",
+            "carried_over",
             "unclear",
           ]),
           severity: zod.enum(["must_fix", "consider"]),

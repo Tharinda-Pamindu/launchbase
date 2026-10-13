@@ -14,5 +14,6 @@ export const AiFindingResponseIssue = {
   missing_why: "missing_why",
   missing_gtm: "missing_gtm",
   scope_too_big: "scope_too_big",
+  carried_over: "carried_over",
   unclear: "unclear",
 } as const;

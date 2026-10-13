@@ -32,6 +32,11 @@ DEMO_PASSWORD = "floppy-demo-1"
 DEMO_DOMAINS = ("northwind.example", "harbor.example", "floppy.example")
 DEMO_ORGS = ("Northwind Labs", "Harbor Health")
 WEEKS_OF_HISTORY = 5
+# Someone whose main task keeps slipping: it didn't ship the last two weeks
+# and is back on this week's draft, so the AI review's look-back has
+# something real to flag.
+CARRY_OVER_EMAIL = "tom@northwind.example"
+CARRY_OVER_WEEKS = 2
 
 
 @dataclass(frozen=True)
@@ -328,12 +333,18 @@ class DemoBuilder:
                     else:
                         self._current_plan(demo, team, user, approver, i)
 
+    @staticmethod
+    def _carries_over(user: User, offset: int) -> bool:
+        return user.email == CARRY_OVER_EMAIL and offset <= CARRY_OVER_WEEKS
+
     def _past_plan(self, demo, team, user, approver, offset: int, i: int) -> None:
         # Mostly shipped, with a believable miss now and then; one person
         # skipped a week entirely.
         if offset == 3 and i == len(team.members):
             return
         shipped = self.rng.random() > 0.3
+        if self._carries_over(user, offset):
+            shipped = False
         plan = self._plan(demo, team, user, offset, i, status=PlanStatus.DONE)
         plan.submitted_at = self._at(-7 * offset, 10)
         plan.approved_at = self._at(-7 * offset, 15)
@@ -392,7 +403,11 @@ class DemoBuilder:
         self, demo, team, user, offset: int, i: int, *, status: str
     ) -> WeeklyPlan:
         work = WORK[team.name]
-        main, why, subs, gtms = work[(offset * 3 + i) % len(work)]
+        main, why, subs, gtms = (
+            WORK["Payments"][4]
+            if self._carries_over(user, offset)
+            else work[(offset * 3 + i) % len(work)]
+        )
         tasks = [PlanTask(kind=TaskKind.MAIN, title=main, why=why, estimate_hours=16)]
         tasks += [
             PlanTask(kind=TaskKind.SUB_GOAL, title=t, estimate_hours=6) for t in subs

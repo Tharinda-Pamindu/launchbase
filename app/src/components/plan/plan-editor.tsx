@@ -473,6 +473,7 @@ const ISSUE_LABELS: Record<AiFindingResponse["issue"], string> = {
   missing_why: "Missing why",
   missing_gtm: "No go-to-market",
   scope_too_big: "Too much for a week",
+  carried_over: "Carried over from earlier weeks",
   unclear: "Unclear",
 };
 

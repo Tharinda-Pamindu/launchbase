@@ -2,6 +2,7 @@
 for Gemini. Nothing here needs a key or network access."""
 
 import asyncio
+from datetime import timedelta
 from typing import Any
 
 import pytest
@@ -10,15 +11,17 @@ from pydantic_ai.messages import (
     ModelRequest,
     ModelResponse,
     ToolCallPart,
+    ToolReturnPart,
     UserPromptPart,
 )
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
+from pydantic_core import to_jsonable_python
 from sqlalchemy import func, select
 
 from app.ai.agents import drafter, reviewer
 from app.config import settings
-from app.models import AiUsageEvent, WeeklyPlan
+from app.models import AiUsageEvent, PlanStatus, PlanTask, WeeklyPlan
 from app.services.plans import current_monday
 from tests.factories import auth
 
@@ -160,7 +163,7 @@ async def test_plan_review_maps_findings_to_tasks(
 
     # The model saw task content and refs, not people or ids.
     prompt = seen["prompt"]
-    assert "MAIN: Implement checkout [20h]" in prompt
+    assert "MAIN: Implement checkout (estimated 20h)" in prompt
     assert "why: (not given)" in prompt
     assert "SG1: Work on webhook bug" in prompt
     assert "(no go-to-market tasks)" in prompt
@@ -427,3 +430,122 @@ async def test_brain_dump_validation(async_client, world, ai_key):
         url, json={"notes": "a perfectly fine brain dump"}, headers=auth(world.b.owner)
     )
     assert response.status_code == 404
+
+
+def _past_plan(org_world, user, weeks_ago: int, title: str, *, done: bool):
+    plan = WeeklyPlan(
+        organization_id=org_world.org.id,
+        user_id=user.id,
+        week_start=current_monday() - timedelta(days=7 * weeks_ago),
+        status=PlanStatus.DONE,
+        main_goal_shipped=done,
+    )
+    plan.tasks = [PlanTask(kind="main", title=title, why="x", position=0, is_done=done)]
+    return plan
+
+
+@pytest.mark.asyncio
+async def test_review_looks_back_at_the_authors_last_two_plans(
+    async_client, world, session_factory, ai_key
+):
+    """Option B: the reviewer has a tool for the member's previous two plans,
+    and only ever gets that member's own plans in this organization."""
+    a = world.a
+    async with session_factory() as db:
+        db.add_all(
+            [
+                _past_plan(
+                    a, a.member, 1, "Webhooks move onto the job queue", done=False
+                ),
+                _past_plan(
+                    a, a.member, 2, "Webhooks move onto the job queue", done=False
+                ),
+                _past_plan(a, a.member, 3, "Old work that shipped", done=True),
+                _past_plan(a, a.teammate, 1, "Teammate's private task", done=False),
+            ]
+        )
+        await db.commit()
+    plan = await draft_plan(
+        async_client,
+        a,
+        a.member,
+        tasks=[
+            {"kind": "main", "title": "Refund flow live", "why": "Support load"},
+            {"kind": "sub_goal", "title": "Move webhooks onto the job queue"},
+        ],
+    )
+    sub = plan["tasks"][1]
+    seen: dict = {}
+
+    def respond(messages, info: AgentInfo) -> ModelResponse:
+        returns = [
+            part
+            for message in messages
+            if isinstance(message, ModelRequest)
+            for part in message.parts
+            if isinstance(part, ToolReturnPart)
+        ]
+        if not returns:
+            return ModelResponse(parts=[ToolCallPart("previous_plans", {})])
+        seen["history"] = to_jsonable_python(returns[0].content)
+        finding = {
+            "task_ref": "SG1",
+            "issue": "carried_over",
+            "severity": "must_fix",
+            "problem": "This is the third week the webhook move is on your plan.",
+            "field": "title",
+            "suggested_rewrite": "Payment webhooks run on the job queue, confirmed on staging",
+        }
+        output = {
+            "verdict": "adjust",
+            "summary": "Finish the webhooks.",
+            "findings": [finding],
+        }
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, output)])
+
+    with reviewer.override(model=FunctionModel(respond)):
+        response = await async_client.post(review_url(a, plan), headers=auth(a.member))
+
+    assert response.status_code == 200, response.text
+    history = seen["history"]
+    assert [h["week_start"] for h in history] == [
+        str(current_monday() - timedelta(days=7)),
+        str(current_monday() - timedelta(days=14)),
+    ]
+    assert history[0]["tasks"] == [
+        {"kind": "main", "title": "Webhooks move onto the job queue", "done": False}
+    ]
+    assert history[0]["main_task_shipped"] is False
+    flat = str(history)
+    assert "Old work that shipped" not in flat  # only the last two plans
+    assert "Teammate" not in flat  # only the author's own plans
+
+    [finding] = response.json()["ai_review"]["findings"]
+    assert (finding["task_id"], finding["issue"]) == (sub["id"], "carried_over")
+
+
+@pytest.mark.asyncio
+async def test_look_back_with_no_history_returns_nothing(async_client, world, ai_key):
+    a = world.a
+    plan = await draft_plan(async_client, a, a.loner)
+    calls: list = []
+
+    def respond(messages, info: AgentInfo) -> ModelResponse:
+        returns = [
+            part.content
+            for message in messages
+            if isinstance(message, ModelRequest)
+            for part in message.parts
+            if isinstance(part, ToolReturnPart)
+        ]
+        if not returns:
+            return ModelResponse(parts=[ToolCallPart("previous_plans", {})])
+        calls.append(returns[0])
+        output = {"verdict": "approve", "summary": "Fine.", "findings": []}
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, output)])
+
+    with reviewer.override(model=FunctionModel(respond)):
+        response = await async_client.post(review_url(a, plan), headers=auth(a.loner))
+
+    assert response.status_code == 200
+    assert calls == [[]]
