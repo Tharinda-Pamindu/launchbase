@@ -10,9 +10,11 @@ This is the living record for the internship assessment project: confirmed decis
 
 **Source availability:** the assessment PDF was not available in this workspace or in the attachments returned for the referenced conversation when this file was created. This initial record therefore preserves the user's supplied requirements without claiming PDF verification. Detailed acceptance criteria, exact versions, repository URL, and submission rules must be checked against the PDF once it is supplied. On 2026-10-13 the user supplied a detailed written brief, which is treated as the working source of truth until the PDF is available.
 
+**Update 2026-10-13:** the user supplied the PDF, `se-intern-weekly-planner-assement.pdf` (Xaventra, ref SE-INT-04, 10 pages). It has been read and is now the authority. Page references below use the form "PDF p.N". Discrepancies with the earlier record are listed in section 4.
+
 | Source | Status | Use |
 | --- | --- | --- |
-| Uploaded assessment PDF | Awaiting accessible copy | Authoritative assessment requirements; add filename and page references after review |
+| Assessment PDF `se-intern-weekly-planner-assement.pdf` | Read 2026-10-13 (supplied in conversation; not stored in the repo) | Authoritative assessment requirements |
 | Current user request, 2026-10-13 | Available | Product, tagline, starter repository, stack, and required scope listed below |
 | Detailed written brief, 2026-10-13 | Available (in conversation) | Working source of truth for scope, phases, security, AI, and submission rules |
 | Referenced conversation: ලේඛන විශ්ලේෂණය ಸಲાહೆ | Read; returned history has no attachments | Tagline confirmation, naming ideas, and provisional workflow context |
@@ -61,19 +63,32 @@ Open stack details: exact package versions, provider model identifier, and envir
 
 ## 4. Required scope and verification checklist
 
-The categories in this section are **Required — user-supplied**. Their detailed assessment acceptance criteria are pending the PDF. The questions identify information to extract, not extra mandatory features.
+The areas below are verified against the PDF (2026-10-13). Estimated effort in the PDF is ~12 hours (PDF p.1).
 
-| ID | Required area | Known scope | Details to extract from the PDF |
+| ID | Required area | Acceptance criteria from the PDF | Source |
 | --- | --- | --- | --- |
-| REQ-01 | Core product features | Team weekly planning SaaS | Entities, fields, screens, weekly boundaries, roles, transitions, approval rules, and progress tracking |
-| REQ-02 | Tenancy and security | Tenant separation and secure access | Tenant model, membership, role permissions, authorization rules, JWT behavior, and cross-tenant access constraints |
-| REQ-03 | Internal admin panel | Internal administration interface | Authorized operators, required views/actions, access boundary, and any audit requirements |
-| REQ-04 | AI plan review | AI-assisted review of a weekly plan | Required inputs, review criteria, output format, persistence, trigger, and failure behavior |
-| REQ-05 | Brain-dump-to-draft | Convert a brain dump into a draft plan | Input limits, generated fields, user editing/confirmation flow, persistence, and failure behavior |
-| REQ-06 | Branding and landing page | Product identity and public landing page | Naming constraints, required sections, content, visual assets, and calls to action |
-| REQ-07 | Seed data | Demonstration data | Required accounts, tenants, roles, sample plans, scenarios, and seeding instructions |
-| REQ-08 | Testing | Assessment-required validation | Required test types, scenarios, commands, coverage expectations, and evidence |
-| REQ-09 | Submission | Assessment deliverables and handoff | Deadline/timezone, repository visibility/link, deployment, documentation, demo, credentials, and submission channel |
+| REQ-01 | Core product features | Email/password sign-up; create an org or join by copyable invite link (no email). Org roles owner/admin/member; owners and admins manage members and settings. Admins create teams, add members, set a lead; users can be in several teams. Plan per member per week keyed by Monday: one main task (with why it matters), a few sub-goals, go-to-market goals, each a separate task with its own status. Plan states draft → submitted → approved → done; lead approves or sends back with a comment; tasks ticked done during the week; member marks whether the main task shipped. Team-week view (submitted, approved, tasks done, shipped) and history of past weeks. Loading, empty and forbidden states; no dead buttons. | PDF p.4–5 |
+| REQ-02 | Tenancy and security | No cross-org reads or writes; a member cannot act as an admin; a non-lead cannot approve. Enforced in the API; reviewers will send requests with other orgs' IDs. | PDF p.5 |
+| REQ-03 | Internal admin panel | In `internal/` on `/internal`. Platform staff only via `is_admin`, created with `manage.py create-user --admin`, never by sign-up; customer owners/admins cannot reach it. Orgs: member, team, plan counts and last active; suspend/reinstate locks members out. Users: search, org memberships, deactivate. AI usage: calls per org, failures, rate-limited calls. Make `is_admin` vs org `admin` obvious in code. Deliberate, explainable call on whether staff see plan text. | PDF p.5 |
+| REQ-04 | AI plan review | Pydantic AI + `gemini-3.5-flash-lite`. Before submitting, a structured review like a demanding lead: flags work-not-result tasks, main task without why, missing GTM goals, scope too big for a week. Each finding targets a specific task with a concrete suggested rewrite; UI shows findings beside tasks with one-click apply. Pydantic `output_type`, no JSON-in-prompt parsing. | PDF p.6–7 |
+| REQ-05 | Brain-dump-to-draft | Messy notes → pre-filled plan form to edit before saving; output never goes straight into the database. | PDF p.6 |
+| REQ-06 | Branding and landing page | Name and logo decided before code (PDF p.1). One-line pitch, short spellable name not an obvious existing product, a sentence on why. SVG logo used as favicon, app header, sign-in page and landing page; readable at 16px on light and dark. Brand replaces Launchbase in `<title>`, favicon, header, sign-in/sign-up, landing page and admin panel (marked internal); nothing user-facing says "Launchbase". Landing page: hero with name, logo, one line, Get started → sign-up in `app/`; how it works; a rendered AI review example; what leads get; responsive to phone, `<title>`, meta description, Open Graph image, no lorem ipsum or generic AI copy. | PDF p.1–3, 7–8 |
+| REQ-07 | Seed data | `manage.py` command: at least two orgs, a few teams, members in every role, several weeks of plans, some shipped and some not. | PDF p.5 |
+| REQ-08 | Testing | Tests are required (overrides template AGENTS.md). `uv run pytest` passes with no key and no network to Google, using `TestModel`/`FunctionModel`; covers agent code and tenancy rules, not only CRUD. AI key server-side via settings from `api/.env`, empty `GOOGLE_API_KEY=` in `api/.env.example`; works without AI (slow, down, 429) with plain-words UI messages and no per-keystroke calls; every AI call recorded against the org with success/failure. | PDF p.3, 7 |
+| REQ-09 | Submission | Root `SUBMISSION.md`: how to run, seed command, demo logins (member, team lead, org owner, staff); brand name, pitch, why the name; honest hours; what isn't done. Commit, then `git archive --format=zip -o assessment.zip HEAD`; unzip into a fresh folder and verify it runs; upload `assessment.zip`. No deadline is stated in the PDF. | PDF p.9–10 |
+
+Grading weights (PDF p.9): tenancy & access ★★★, AI integration ★★★, product & domain ★★, admin panel ★★, founder thinking ★★, code quality ★, judgement ★. Optional extras: pick at most one (end-of-week summary, look back before planning, or team digest), worth less than a solid core.
+
+### Discrepancies between the PDF and the earlier record
+
+| Item | Earlier record | PDF | Action |
+| --- | --- | --- | --- |
+| Branding order | D7: no branding work until a name is chosen; branding was step 9 | Name and logo come before any code so the brand runs through the code from the first commit (p.1) | Choose name and logo now, before implementation step 1; landing page content can still come later |
+| CLAUDE.md | Not present | Recommends a one-line `CLAUDE.md` containing `@AGENTS.md`, and updating AGENTS.md files when the agent makes mistakes (p.8) | Add `CLAUDE.md` |
+| Model ID | To verify (D8) | `gemini-3.5-flash-lite` is named explicitly (p.6) | ID confirmed by the brief; availability still checked during AI work |
+| Timeboxing (D4) | Minimal timeboxing planned | Not mentioned | Optional; keep behind required work so it does not cost core scope (judgement criterion, p.9) |
+| Reference features step | Carry-over and timeboxing listed alongside Option B | At most one optional extra | Carry-over overlaps Option B; treat them as one extra |
+| Deadline | Unknown | Not stated; ~12 hours estimated effort | No change |
 
 ### Core workflow context — provisional
 
@@ -85,7 +100,7 @@ The earlier discussion also positioned the product around weekly planning and ap
 
 ### Implementation tracking
 
-- [ ] Obtain and read the assessment PDF; add page references and precise acceptance criteria to REQ-01 through REQ-09.
+- [x] Obtain and read the assessment PDF; add page references and precise acceptance criteria to REQ-01 through REQ-09. Evidence: section 4 table (2026-10-13).
 - [x] Inspect Launchbase and record existing functionality and required changes. Evidence: `docs/ARCHITECTURE.md` section 1 (2026-10-13).
 - [ ] Implement and verify the required weekly planning workflow.
 - [ ] Implement and verify tenant separation, authentication, and authorization.
@@ -101,7 +116,7 @@ The earlier discussion also positioned the product around weekly planning and ap
 
 **Approved tagline:** Your second brain
 
-**Product name:** Open. No candidate has been approved. The user will choose later.
+**Product name:** Open. No candidate has been approved. The PDF (p.1) asks for the name and logo before any code, so this is now the next decision.
 
 Names suggested in the referenced conversation: Weekmind, Planora, Shipmind, Focusly, Weekwise, Planflow, Taskmind, Mindweek, Flowweek, Syncmind, and Weekship. Earlier assistant preferences for Weekmind and Shipmind were recommendations only. Name availability, existing products, domains, and trademark conflicts have not been researched.
 
@@ -115,16 +130,16 @@ Longer tagline variants suggested earlier were not selected. Keep the confirmed 
 
 | ID | Question / missing item | Status |
 | --- | --- | --- |
-| OPEN-01 | Accessible assessment PDF and its exact requirements | Awaiting source; written brief used meanwhile |
-| OPEN-02 | Final product name | Awaiting decision |
+| OPEN-01 | Accessible assessment PDF and its exact requirements | Resolved 2026-10-13: PDF read; criteria in section 4 |
+| OPEN-02 | Final product name and logo | Awaiting decision; blocks implementation per PDF p.1 |
 | OPEN-03 | Launchbase repository URL and starting revision | Resolved: `github.com/chamoda/launchbase`, baseline `af4ad1f` |
 | OPEN-04 | Exact tenant, team, membership, and permission model | Decided in `docs/ARCHITECTURE.md` (D1, D3, D6) |
 | OPEN-05 | Weekly plan fields, lifecycle, approvals, and time rules | Decided in `docs/ARCHITECTURE.md` section 4 |
 | OPEN-06 | Internal admin panel scope and access rules | Decided in `docs/ARCHITECTURE.md` (D2, privacy decision) |
-| OPEN-07 | AI inputs, structured outputs, expected behavior, and provider configuration | Designed in `docs/ARCHITECTURE.md` section 7; model ID to verify |
-| OPEN-08 | Landing page and branding acceptance criteria | Specified by the written brief; awaiting product name |
-| OPEN-09 | Seed scenarios and test expectations | Specified by the written brief; plan in `docs/ARCHITECTURE.md` |
-| OPEN-10 | Deadline, submission channel, and deliverables | Deliverables specified by the written brief; deadline unknown |
+| OPEN-07 | AI inputs, structured outputs, expected behavior, and provider configuration | Designed in `docs/ARCHITECTURE.md` section 7; model ID `gemini-3.5-flash-lite` named by PDF p.6 |
+| OPEN-08 | Landing page and branding acceptance criteria | Specified by PDF p.1–3, 7–8; awaiting product name |
+| OPEN-09 | Seed scenarios and test expectations | Specified by PDF p.5, 7; plan in `docs/ARCHITECTURE.md` |
+| OPEN-10 | Deadline, submission channel, and deliverables | Deliverables and `git archive` upload per PDF p.9–10; no deadline stated |
 
 ## 7. Testing and submission evidence
 
@@ -139,7 +154,7 @@ No implementation, test execution, or submission is recorded yet. The following 
 | Test commands and results | Baseline before changes: `uv run pytest` 12 passed (2026-10-13) |
 | Tenant and permission checks | Not run / not recorded |
 | AI feature verification | Not run / not recorded |
-| Known limitations | PDF requirements have not yet been verified |
+| Known limitations | None recorded yet |
 | Deployment / demo link, if required | Production deployment is out of scope per the written brief |
 | Final submission checklist and deadline | Checklist in the written brief; deadline unknown |
 
@@ -165,6 +180,7 @@ No implementation, test execution, or submission is recorded yet. The following 
 | 2026-10-13 | D7: product name deferred; D8: verify model ID during AI work | User decision |
 | 2026-10-13 | D9: develop in WSL 2 Ubuntu with the repository inside the WSL filesystem | User decision |
 | 2026-10-13 | D10: commit locally in small steps; do not push | User decision |
+| 2026-10-13 | Read the assessment PDF; replaced REQ-01–REQ-09 with its criteria and page references; logged discrepancies; moved name and logo ahead of implementation; added `CLAUDE.md` | PDF `se-intern-weekly-planner-assement.pdf` |
 
 ## 9. Maintenance rules
 

@@ -44,8 +44,8 @@ Pre-existing gaps to fix first:
 | D4 | Minimal timeboxing: per-task hour budget, weekly capacity, deterministic over-capacity warning, estimates fed to the AI scope check. |
 | D5 | One optional extra: Option B "look back before planning", only after required work is solid. |
 | D6 | Drafts are private to the author; others see only "not submitted". After submission the content is visible to the author's possible approvers (D3). |
-| D7 | Product name: pending user choice. No branding work until then. |
-| D8 | Model `gemini-3.5-flash-lite` via `AI_MODEL` setting; verify the ID during the AI phase. |
+| D7 | Product name: pending user choice. Per the PDF (p.1), the name and SVG logo are settled before implementation so the brand is in the code from the first commit. |
+| D8 | Model `gemini-3.5-flash-lite` (named by the PDF, p.6) via `AI_MODEL` setting; confirm it responds during the AI phase. |
 | D9 | Develop inside WSL 2 (Ubuntu), repository in the WSL filesystem. |
 | D10 | Commit locally in small logical steps; never push (origin is the upstream template). |
 
@@ -190,6 +190,9 @@ timestamps, member names/emails/roles, team names) but never task text,
 
 ## 9. Implementation order
 
+0. Brand (PDF p.1): name, one-line pitch, SVG logo checked at 16/32px and
+   large on light and dark; swap Launchbase's `<title>`, favicon and header
+   in `app/`, `internal/` (marked internal) and `site/`.
 1. Auth hardening (`is_active`), signup.
 2. Tenancy core: orgs, memberships, invites, teams, `OrgContext`, tests.
 3. Plans, tasks, workflow, reviews, team-week and history APIs, tests.
@@ -198,6 +201,8 @@ timestamps, member names/emails/roles, team names) but never task text,
 6. Seed command (`manage.py seed-demo`).
 7. Customer frontend.
 8. Internal frontend.
-9. Branding and landing page (after D7).
-10. Reference features (carry-over, timeboxing) and Option B.
+9. Landing page (PDF p.7–8): hero, how it works, rendered AI review example,
+   for teams, meta, Open Graph image.
+10. At most one optional extra (PDF p.9): Option B, which covers carry-over;
+    timeboxing (D4) only if core work is solid.
 11. QA, `SUBMISSION.md`, packaging from a fresh `git archive`.
